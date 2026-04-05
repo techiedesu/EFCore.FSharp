@@ -3,7 +3,7 @@ group Src
     source https://api.nuget.org/v3/index.json
     storage: none
 
-    nuget FSharp.Core 9.0.100
+    nuget FSharp.Core >= 9.0.100
     nuget Microsoft.SourceLink.GitHub 1.0.0 copy_local: true
     nuget Microsoft.EntityFrameworkCore.Design ~> 10.0.0
 
@@ -14,7 +14,7 @@ group Tests
 
     nuget System.Collections.Immutable >= 10.0.0
 
-    nuget FSharp.Core 9.0.100
+    nuget FSharp.Core >= 9.0.100
     nuget Microsoft.SourceLink.GitHub 1.0.0 copy_local: true
     nuget Expecto 9.0.2
     nuget YoloDev.Expecto.TestSdk 0.12.10
