@@ -556,7 +556,6 @@ and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
                 .TryAdd<IUpdateSqlGenerator, FakeSqlGenerator>()
                 .TryAdd<IModificationCommandBatchFactory, TestModificationCommandBatchFactory>()
                 .TryAdd<IRelationalDatabaseCreator, FakeRelationalDatabaseCreator>()
-        //.TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
 
 
         builder.TryAddCoreServices() |> ignore
