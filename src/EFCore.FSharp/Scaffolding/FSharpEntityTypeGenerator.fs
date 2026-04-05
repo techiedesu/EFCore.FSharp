@@ -286,7 +286,7 @@ type FSharpEntityTypeGenerator
                 AttributeWriter(nameof InversePropertyAttribute)
 
             let nameMatches =
-                navigation.DeclaringEntityType.GetPropertiesAndNavigations()
+                navigation.DeclaringEntityType.GetMembers()
                 |> Seq.exists (fun m -> m.Name = inverseNavigation.DeclaringEntityType.Name)
 
             let param =
@@ -420,7 +420,7 @@ type FSharpEntityTypeGenerator
                     AttributeWriter(nameof InversePropertyAttribute)
 
                 let condition =
-                    navigation.DeclaringEntityType.GetPropertiesAndNavigations()
+                    navigation.DeclaringEntityType.GetMembers()
                     |> Seq.exists (fun m -> m.Name = inverseNavigation.DeclaringEntityType.Name)
 
                 if condition then
@@ -607,8 +607,7 @@ type FSharpEntityTypeGenerator
 
         generate entityType useDataAnnotation scaffoldNullableColumnsAs
 
-    interface ICSharpEntityTypeGenerator with
-        member this.WriteCode(entityType, ``namespace``, useDataAnnotations, useNullableReferenceTypes) =
+    member this.WriteCode(entityType, ``namespace``, useDataAnnotations, useNullableReferenceTypes) =
             let scaffoldTypesAs =
                 if notNull config then
                     config.ScaffoldTypesAs

@@ -102,7 +102,7 @@ type FSharpSnapshotGenerator
 
                     stringBuilder {
                         if leadingNewLine then ""
-                        (code.Fragment(c, builderName)) + " |> ignore"
+                        (code.Fragment(c, builderName, false)) + " |> ignore"
                     }
 
             | None ->

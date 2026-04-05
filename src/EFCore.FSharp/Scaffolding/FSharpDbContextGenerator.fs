@@ -120,10 +120,10 @@ type FSharpDbContextGenerator
     let generateSequence (s: ISequence) =
 
         let methodName =
-            if s.ClrType = Sequence.DefaultClrType then
+            if s.Type = Sequence.DefaultClrType then
                 "HasSequence"
             else
-                sprintf "HasSequence<%s>" (FSharpUtilities.getTypeName (s.ClrType))
+                sprintf "HasSequence<%s>" (FSharpUtilities.getTypeName (s.Type))
 
         let parameters =
             if (s.Schema |> String.IsNullOrEmpty)
@@ -901,7 +901,6 @@ type FSharpDbContextGenerator
             CoreAnnotationNames.ProductVersion
             RelationalAnnotationNames.MaxIdentifierLength
             ScaffoldingAnnotationNames.DatabaseName
-            ScaffoldingAnnotationNames.EntityTypeErrors
         }
         |> Seq.iter (annotations.Remove >> ignore)
 
@@ -987,10 +986,6 @@ type FSharpDbContextGenerator
 
                         ""
 
-                for e in model.GetEntityTypeErrors() do
-                    $"// {e.Value} Please see the warning messages."
-                    ""
-
                 generateOnConfiguring connectionString suppressOnConfiguring
 
                 generateOnModelCreating model useDataAnnotations
@@ -998,19 +993,18 @@ type FSharpDbContextGenerator
         }
 
 
-    interface ICSharpDbContextGenerator with
-        member this.WriteCode
-            (
-                model,
-                contextName,
-                connectionString,
-                contextNamespace,
-                modelNamespace,
-                useDataAnnotations,
-                useNullableReferenceTypes,
-                suppressConnectionStringWarning,
-                suppressOnConfiguring
-            ) =
+    member this.WriteCode
+        (
+            model,
+            contextName,
+            connectionString,
+            contextNamespace,
+            modelNamespace,
+            useDataAnnotations,
+            useNullableReferenceTypes,
+            suppressConnectionStringWarning,
+            suppressOnConfiguring
+        ) =
 
             namespaces.Clear()
 
