@@ -12,7 +12,7 @@
         <Compile Include="TestUtilities\Mocks.fs" />
         <Compile Include="TestUtilities\SqlServerTestHelpers.fs" />
         <Compile Include="TestUtilities\TestServiceFactory.fs" />
-        <Compile Include="TestUtilities\TestRelationalTypeMappingSource.fs" />
+        <!-- TestRelationalTypeMappingSource moved to C# interop project due to F# limitation with C# covariant return types -->
         <Compile Include="TestUtilities\TestRelationalMigrationSqlGenerator.fs" />
         <Compile Include="TestUtilities\TestRelationalConventionSetBuilder.fs" />
         <Compile Include="TestUtilities\FakeDiagnosticsLogger.fs" />
@@ -38,6 +38,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="../../src/EFCore.FSharp/EFCore.FSharp.fsproj" />
+        <ProjectReference Include="../EFCore.FSharp.Tests.CSharpInterop/EFCore.FSharp.Tests.CSharpInterop.csproj" />
     </ItemGroup>
     <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
