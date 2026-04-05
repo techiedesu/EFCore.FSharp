@@ -32,3 +32,4 @@ type RelationalTestHelpers private () =
 
         (optionsBuilder :> IDbContextOptionsBuilderInfrastructure)
             .AddOrUpdateExtension(extension.WithConnection(fakeConn))
+        optionsBuilder

@@ -1,6 +1,7 @@
 namespace EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open System.Collections.Generic
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.EntityFrameworkCore.Design.Internal
 open Microsoft.EntityFrameworkCore.Migrations
@@ -31,6 +32,16 @@ type MockHistoryRepository() =
         member __.GetDeleteScript(migrationId) = null
 
         member __.GetInsertScript(row) = null
+
+        member __.Create() = ()
+
+        member __.CreateAsync(cancellationToken: CancellationToken) = Task.CompletedTask
+
+        member __.get_LockReleaseBehavior() = Unchecked.defaultof<LockReleaseBehavior>
+
+        member __.AcquireDatabaseLock() = Unchecked.defaultof<IMigrationsDatabaseLock>
+
+        member __.AcquireDatabaseLockAsync(cancellationToken: CancellationToken) = Task.FromResult(Unchecked.defaultof<IMigrationsDatabaseLock>)
 
 type MockProvider() =
     interface IDatabaseProvider with
