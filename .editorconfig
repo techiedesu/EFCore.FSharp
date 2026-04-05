@@ -17,6 +17,16 @@ end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 
+# Fantomas settings (pinned to fantomas 6 defaults to prevent future mass reformatting)
+[*.{fs,fsi,fsx}]
+max_line_length = 120
+fsharp_max_if_then_else_short_width = 60
+fsharp_max_infix_operator_expression = 80
+fsharp_max_record_width = 40
+fsharp_max_array_or_list_width = 80
+fsharp_max_value_binding_width = 80
+fsharp_max_function_binding_width = 40
+
 [paket.*]
 trim_trailing_whitespace = true
 indent_size = 2
