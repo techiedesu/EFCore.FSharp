@@ -17,8 +17,7 @@ type EFCoreFSharpServices(scaffoldOptions: ScaffoldOptions) =
 
     new() = EFCoreFSharpServices(ScaffoldOptions.Default)
 
-    static member Default =
-        EFCoreFSharpServices() :> IDesignTimeServices
+    static member Default = EFCoreFSharpServices() :> IDesignTimeServices
 
     static member WithScaffoldOptions scaffoldOptions =
         EFCoreFSharpServices scaffoldOptions :> IDesignTimeServices

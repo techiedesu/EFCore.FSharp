@@ -33,26 +33,23 @@ module StringBuffer =
         if Seq.isEmpty strings then
             String.Empty
         else
-            strings
-            |> Seq.reduce (fun x y -> x + separator + y)
+            strings |> Seq.reduce (fun x y -> x + separator + y)
 
     let ifTrue condition txt = if condition then Some txt else None
 
     let writeNamespaces (namespaces: string seq) =
-        namespaces
-        |> Seq.map (fun n -> "open " + n)
-        |> join Environment.NewLine
+        namespaces |> Seq.map (fun n -> "open " + n) |> join Environment.NewLine
 
     let unindent (n: int) (txt: string option) =
         fun (b: IndentedStringBuilder) ->
             match txt with
             | Some t ->
-                for _ in [ 1 .. n ] do
+                for _ in [ 1..n ] do
                     b.DecrementIndent() |> ignore
 
                 Printf.kprintf (b.AppendLines >> ignore) "%s" t
 
-                for _ in [ 1 .. n ] do
+                for _ in [ 1..n ] do
                     b.IncrementIndent() |> ignore
             | None -> ()
 
@@ -93,8 +90,7 @@ module StringBuffer =
 
         member inline _.Yield(lines: string seq) =
             fun (b: IndentedStringBuilder) ->
-                lines
-                |> Seq.iter (fun txt -> Printf.kprintf (b.AppendLines >> ignore) "%s" txt)
+                lines |> Seq.iter (fun txt -> Printf.kprintf (b.AppendLines >> ignore) "%s" txt)
 
         member inline __.Yield(txt: string option) =
             fun (b: IndentedStringBuilder) ->
@@ -112,9 +108,8 @@ module StringBuffer =
 
     type IndentStringBufferBuilder() =
         inherit StringBufferBuilder()
-        with
 
-            override _.Run(f: StringBuffer) = writeStringBuffer f Indent
+        override _.Run(f: StringBuffer) = writeStringBuffer f Indent
 
     let stringBuilder = new StringBufferBuilder()
     let indent = new IndentStringBufferBuilder()

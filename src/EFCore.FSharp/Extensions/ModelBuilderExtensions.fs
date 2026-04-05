@@ -21,17 +21,10 @@ module Extensions =
         member this.UseValueConverterForType(``type``: Type, converter: ValueConverter) =
 
             this.Model.GetEntityTypes()
-            |> Seq.iter
-                (fun e ->
-                    e.ClrType.GetProperties()
-                    |> Seq.filter (fun p -> p.PropertyType = ``type``)
-                    |> Seq.iter
-                        (fun p ->
-                            this
-                                .Entity(e.Name)
-                                .Property(p.Name)
-                                .HasConversion(converter)
-                            |> ignore))
+            |> Seq.iter (fun e ->
+                e.ClrType.GetProperties()
+                |> Seq.filter (fun p -> p.PropertyType = ``type``)
+                |> Seq.iter (fun p -> this.Entity(e.Name).Property(p.Name).HasConversion(converter) |> ignore))
 
             this
 
@@ -40,11 +33,9 @@ module Extensions =
             let makeOptionConverter t =
                 let underlyingType = SharedTypeExtensions.unwrapOptionType t
 
-                let converterType =
-                    genericOptionConverterType.MakeGenericType(underlyingType)
+                let converterType = genericOptionConverterType.MakeGenericType(underlyingType)
 
-                let converter =
-                    converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
+                let converter = converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
 
                 converter
 
@@ -64,23 +55,18 @@ module Extensions =
 
         member this.RegisterSingleUnionCases() =
             let makeSingleUnionCaseConverter tUnion =
-                let underlyingType =
-                    SharedTypeExtensions.unwrapSingleCaseUnion tUnion
+                let underlyingType = SharedTypeExtensions.unwrapSingleCaseUnion tUnion
 
                 let converterType =
                     genericSingleCaseUnionConverterType.MakeGenericType(underlyingType, tUnion)
 
-                let converter =
-                    converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
+                let converter = converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
 
                 converter
 
             let converterDetails =
                 this.Model.GetEntityTypes()
-                |> Seq.filter
-                    (fun p ->
-                        not
-                        <| SharedTypeExtensions.isSingleCaseUnion p.ClrType)
+                |> Seq.filter (fun p -> not <| SharedTypeExtensions.isSingleCaseUnion p.ClrType)
                 |> Seq.collect (fun e -> e.ClrType.GetProperties())
                 |> Seq.filter (fun p -> SharedTypeExtensions.isSingleCaseUnion p.PropertyType)
                 |> Seq.map (fun p -> (p, (makeSingleUnionCaseConverter p.PropertyType)))
@@ -107,8 +93,7 @@ module Extensions =
     type DbContextOptionsBuilder with
         member this.UseFSharpTypes() =
             let extension =
-                let found =
-                    this.Options.FindExtension<FSharpTypeOptionsExtension>()
+                let found = this.Options.FindExtension<FSharpTypeOptionsExtension>()
 
                 if notNull found then
                     found
@@ -116,7 +101,6 @@ module Extensions =
                     fSharpTypeOptionsExtensionInstance
 
 
-            (this :> IDbContextOptionsBuilderInfrastructure)
-                .AddOrUpdateExtension(extension)
+            (this :> IDbContextOptionsBuilderInfrastructure).AddOrUpdateExtension(extension)
 
             this

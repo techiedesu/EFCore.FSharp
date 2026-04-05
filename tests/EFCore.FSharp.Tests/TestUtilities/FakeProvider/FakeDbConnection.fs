@@ -185,7 +185,7 @@ type FakeDbCommand(?connection: FakeDbConnection, ?commandExecutor: FakeCommandE
         base.Dispose disposing
 
 
-and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
+and FakeDbDataReader(?columnNames: string[], ?results: ResizeArray<obj[]>) =
     inherit DbDataReader()
 
     let _columnNames =
@@ -196,9 +196,9 @@ and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
     let _results =
         match results with
         | Some e -> e
-        | None -> ResizeArray<obj []>()
+        | None -> ResizeArray<obj[]>()
 
-    let mutable _currentRow: obj [] = null
+    let mutable _currentRow: obj[] = null
     let mutable _rowIndex: int = 0
 
     let mutable _readAsyncCount: int = 0
@@ -406,11 +406,7 @@ and [<AllowNullLiteral>] FakeDbTransaction(connection: FakeDbConnection, ?isolat
         base.Dispose(disposing)
 
 and [<AllowNullLiteral>] FakeDbConnection
-    (
-        connectionString: string,
-        ?commandExecutor: FakeCommandExecutor,
-        ?state: ConnectionState
-    ) as this =
+    (connectionString: string, ?commandExecutor: FakeCommandExecutor, ?state: ConnectionState) as this =
     inherit DbConnection()
 
     let mutable connectionState: ConnectionState =
@@ -498,8 +494,7 @@ and FakeRelationalConnection(options) =
     member this.DbConnections: IReadOnlyList<FakeDbConnection> = _dbConnections :> _
 
     override this.CreateDbConnection() =
-        let connection =
-            new FakeDbConnection(base.ConnectionString)
+        let connection = new FakeDbConnection(base.ConnectionString)
 
         _dbConnections.Add(connection)
         connection :> _
@@ -568,8 +563,7 @@ and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
 
         serviceCollection
 
-    override this.Info =
-        System.NotImplementedException() |> raise
+    override this.Info = System.NotImplementedException() |> raise
 
 
     override this.Clone() =

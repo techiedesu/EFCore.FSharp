@@ -11,16 +11,14 @@ open Microsoft.EntityFrameworkCore.Migrations.Internal
 
 module internal EntityFrameworkExtensions =
 
-    let getConfiguredColumnType =
-        RelationalPropertyExtensions.GetConfiguredColumnType
+    let getConfiguredColumnType = RelationalPropertyExtensions.GetConfiguredColumnType
 
     let getPrimaryKey (p: IProperty) = (p :?> Property).PrimaryKey
 
     let sortNamespaces ns =
         let namespaceComparer = NamespaceComparer()
 
-        ns
-        |> List.sortWith (fun x y -> namespaceComparer.Compare(x, y))
+        ns |> List.sortWith (fun x y -> namespaceComparer.Compare(x, y))
 
     let getId = MigrationExtensions.GetId
 
@@ -49,15 +47,11 @@ module internal EntityFrameworkExtensions =
     let toAnnotatable (a: IAnnotatable) = a
 
     let annotationsToDictionary (annotations: IAnnotation seq) =
-        annotations
-        |> Seq.map (fun a -> a.Name, a)
-        |> readOnlyDict
-        |> Dictionary
+        annotations |> Seq.map (fun a -> a.Name, a) |> readOnlyDict |> Dictionary
 
     let isManyToManyJoinEntityType (e: IEntityType) =
 
-        if (e.GetNavigations() |> Seq.isEmpty
-            && e.GetSkipNavigations() |> Seq.isEmpty) then
+        if (e.GetNavigations() |> Seq.isEmpty && e.GetSkipNavigations() |> Seq.isEmpty) then
             false
         else
             let primaryKey = e.FindPrimaryKey()
@@ -68,11 +62,8 @@ module internal EntityFrameworkExtensions =
             && primaryKey.Properties.Count > 1
             && foreignKeys.Length = 2
             && primaryKey.Properties.Count = properties.Length
-            && (foreignKeys.[0].Properties.Count
-                + foreignKeys.[1].Properties.Count) = properties.Length
-            && foreignKeys.[0]
-                .Properties.Intersect(foreignKeys.[1].Properties)
-               |> Seq.isEmpty
+            && (foreignKeys.[0].Properties.Count + foreignKeys.[1].Properties.Count) = properties.Length
+            && foreignKeys.[0].Properties.Intersect(foreignKeys.[1].Properties) |> Seq.isEmpty
             && foreignKeys.[0].IsRequired
             && foreignKeys.[1].IsRequired
             && not foreignKeys.[0].IsUnique

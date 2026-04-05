@@ -10,21 +10,21 @@ let StringBufferTests =
         "StringBuffer tests"
         [ test "Indent works correctly" {
 
-            let expected =
-                (seq {
-                    "let square x ="
-                    "    x * x"
-                    ""
-                 }
-                 |> join System.Environment.NewLine)
+              let expected =
+                  (seq {
+                      "let square x ="
+                      "    x * x"
+                      ""
+                   }
+                   |> join System.Environment.NewLine)
 
-            let actual =
-                stringBuilder {
-                    "let square x ="
-                    indent { "x * x" }
-                }
+              let actual =
+                  stringBuilder {
+                      "let square x ="
+                      indent { "x * x" }
+                  }
 
-            Expect.equal actual expected "Should match"
+              Expect.equal actual expected "Should match"
           }
 
           test "Nested indents work correctly" {

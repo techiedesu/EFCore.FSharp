@@ -49,8 +49,7 @@ let blogWithoutContent =
       Content = None }
 
 let saveBlogs ctx =
-    [ blogWithContent; blogWithoutContent ]
-    |> List.iter (addEntity ctx)
+    [ blogWithContent; blogWithoutContent ] |> List.iter (addEntity ctx)
 
     saveChanges ctx
 
@@ -117,11 +116,7 @@ let OptionTranslationLinqMethodsTests =
               use ctx = createContext ()
               saveBlogs ctx
 
-              let blog =
-                  ctx
-                      .Blogs
-                      .Where(fun x -> x.Content.IsSome)
-                      .FirstOrDefault()
+              let blog = ctx.Blogs.Where(fun x -> x.Content.IsSome).FirstOrDefault()
 
               Expect.equal blog blogWithContent "Record in context should match"
           }
@@ -131,11 +126,7 @@ let OptionTranslationLinqMethodsTests =
               use ctx = createContext ()
               saveBlogs ctx
 
-              let blog =
-                  ctx
-                      .Blogs
-                      .Where(fun x -> x.Content.IsNone)
-                      .FirstOrDefault()
+              let blog = ctx.Blogs.Where(fun x -> x.Content.IsNone).FirstOrDefault()
 
               Expect.equal blog blogWithoutContent "Record in context should match"
           }
@@ -144,11 +135,7 @@ let OptionTranslationLinqMethodsTests =
               use ctx = createContext ()
               saveBlogs ctx
 
-              let blog =
-                  ctx
-                      .Blogs
-                      .Where(fun x -> x.Content.Value = "Some text")
-                      .FirstOrDefault()
+              let blog = ctx.Blogs.Where(fun x -> x.Content.Value = "Some text").FirstOrDefault()
 
               Expect.equal blog blogWithContent "Record in context should match"
           } ]

@@ -96,11 +96,7 @@ let OptionTranslationLinqMethodsTests =
               use ctx = createContext ()
               saveBlogs ctx
 
-              let blog =
-                  ctx
-                      .Blogs
-                      .Where(fun b -> b.Votes = PositiveInteger 10)
-                      .FirstOrDefault()
+              let blog = ctx.Blogs.Where(fun b -> b.Votes = PositiveInteger 10).FirstOrDefault()
 
               Expect.equal blog blogWithVotes "Record in context should match"
           } ]

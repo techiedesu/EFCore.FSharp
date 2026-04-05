@@ -16,11 +16,8 @@ open Microsoft.EntityFrameworkCore.Storage
 open EntityFrameworkCore.FSharp
 
 type FSharpSnapshotGenerator
-    (
-        code: ICSharpHelper,
-        mappingSource: IRelationalTypeMappingSource,
-        annotationCodeGenerator: IAnnotationCodeGenerator
-    ) =
+    (code: ICSharpHelper, mappingSource: IRelationalTypeMappingSource, annotationCodeGenerator: IAnnotationCodeGenerator)
+    =
 
     let mutable _typeQualifiedCalls: string option = None
 
@@ -36,12 +33,9 @@ type FSharpSnapshotGenerator
             if typeMapping |> isNull then
                 let mapping = mappingSource.FindMapping(p)
 
-                if mapping |> isNull then
-                    None
-                elif mapping.Converter |> isNull then
-                    None
-                else
-                    mapping.Converter |> Some
+                if mapping |> isNull then None
+                elif mapping.Converter |> isNull then None
+                else mapping.Converter |> Some
             elif typeMapping.Converter |> isNull then
                 None
             else
@@ -65,32 +59,31 @@ type FSharpSnapshotGenerator
         let typeQualifiedCalls = ResizeArray<MethodCallCodeFragment>()
 
         fluentApiCalls
-        |> Seq.iter
-            (fun call ->
-                if notNull call.MethodInfo
-                   && call.MethodInfo.IsStatic
-                   && (isNull call.MethodInfo.DeclaringType
-                       || call.MethodInfo.DeclaringType.Assembly
-                          <> typeof<RelationalModelBuilderExtensions>.Assembly) then
-                    typeQualifiedCalls.Add call
-                else
-                    chainedCall <-
-                        match chainedCall with
-                        | None -> Some call
-                        | Some c -> Some(c.Chain(call)))
-
-        // Append remaining raw annotations which did not get generated as Fluent API calls
-        annotations.Values
-        |> Seq.sortBy (fun a -> a.Name)
-        |> Seq.iter
-            (fun a ->
-                let call =
-                    MethodCallCodeFragment(hasAnnotationMethodInfo, a.Name, a.Value)
-
+        |> Seq.iter (fun call ->
+            if
+                notNull call.MethodInfo
+                && call.MethodInfo.IsStatic
+                && (isNull call.MethodInfo.DeclaringType
+                    || call.MethodInfo.DeclaringType.Assembly
+                       <> typeof<RelationalModelBuilderExtensions>.Assembly)
+            then
+                typeQualifiedCalls.Add call
+            else
                 chainedCall <-
                     match chainedCall with
                     | None -> Some call
                     | Some c -> Some(c.Chain(call)))
+
+        // Append remaining raw annotations which did not get generated as Fluent API calls
+        annotations.Values
+        |> Seq.sortBy (fun a -> a.Name)
+        |> Seq.iter (fun a ->
+            let call = MethodCallCodeFragment(hasAnnotationMethodInfo, a.Name, a.Value)
+
+            chainedCall <-
+                match chainedCall with
+                | None -> Some call
+                | Some c -> Some(c.Chain(call)))
 
 
         let chainedCalls =
@@ -101,27 +94,23 @@ type FSharpSnapshotGenerator
                 else
 
                     stringBuilder {
-                        if leadingNewLine then ""
+                        if leadingNewLine then
+                            ""
+
                         (code.Fragment(c, builderName, false)) + " |> ignore"
                     }
 
-            | None ->
-                if inChainedCall then
-                    "|> ignore"
-                else
-                    ""
+            | None -> if inChainedCall then "|> ignore" else ""
 
         let buildTypeQualifiedCall call =
-            code.Fragment(call, builderName, typeQualified = true)
-            + " |> ignore"
+            code.Fragment(call, builderName, typeQualified = true) + " |> ignore"
 
         let typeQualifiedCalls =
             if typeQualifiedCalls.Count > 0 then
                 stringBuilder {
                     ""
 
-                    typeQualifiedCalls
-                    |> Seq.map buildTypeQualifiedCall
+                    typeQualifiedCalls |> Seq.map buildTypeQualifiedCall
                 }
                 |> Some
             else
@@ -139,17 +128,13 @@ type FSharpSnapshotGenerator
         | true, defaultValue ->
             let valueConverter =
                 if defaultValue <> (box DBNull.Value) then
-                    let valueConverter =
-                        property.GetValueConverter() |> Option.ofObj
+                    let valueConverter = property.GetValueConverter() |> Option.ofObj
 
                     let typeMap =
-                        if property.FindTypeMapping()
-                           |> Option.ofObj
-                           |> Option.isSome then
+                        if property.FindTypeMapping() |> Option.ofObj |> Option.isSome then
                             property.FindTypeMapping() |> Option.ofObj
                         else
-                            (mappingSource.FindMapping(property) :> CoreTypeMapping)
-                            |> Option.ofObj
+                            (mappingSource.FindMapping(property) :> CoreTypeMapping) |> Option.ofObj
 
                     match valueConverter, typeMap with
                     | Some v, _ -> v |> Option.ofObj
@@ -166,8 +151,7 @@ type FSharpSnapshotGenerator
 
                 code.UnknownLiteral(value)
 
-            $".HasDefaultValue({appendValueConverter})"
-            |> Some
+            $".HasDefaultValue({appendValueConverter})" |> Some
 
         | _ -> None
 
@@ -177,9 +161,7 @@ type FSharpSnapshotGenerator
             |> annotationsToDictionary
 
         let columnType (p: IProperty) =
-            let columnType =
-                p.GetColumnType()
-                ?= mappingSource.GetMapping(p).StoreType
+            let columnType = p.GetColumnType() ?= mappingSource.GetMapping(p).StoreType
 
             code.Literal columnType
 
@@ -194,20 +176,18 @@ type FSharpSnapshotGenerator
         let generateFluentApiForPrecisionAndScale =
             property.GetPrecision()
             |> Option.ofNullable
-            |> Option.map
-                (fun i ->
-                    let scale =
-                        if property.GetScale().HasValue then
-                            $", {code.UnknownLiteral(property.GetScale().Value)}"
-                        else
-                            ""
+            |> Option.map (fun i ->
+                let scale =
+                    if property.GetScale().HasValue then
+                        $", {code.UnknownLiteral(property.GetScale().Value)}"
+                    else
+                        ""
 
-                    annotations.Remove(CoreAnnotationNames.Precision)
-                    |> ignore
+                annotations.Remove(CoreAnnotationNames.Precision) |> ignore
 
-                    $".HasPrecision({code.UnknownLiteral i}{scale})"
+                $".HasPrecision({code.UnknownLiteral i}{scale})"
 
-                    )
+            )
 
         let generateFluentApiForUnicode =
             property.IsUnicode()
@@ -255,8 +235,7 @@ type FSharpSnapshotGenerator
             | None -> p.ClrType
 
         let isPropertyRequired =
-            let isNullable =
-                (isOptionType clrType || isNullableType clrType)
+            let isNullable = (isOptionType clrType || isNullableType clrType)
 
             (p.IsPrimaryKey()) || (not isNullable)
 
@@ -310,20 +289,13 @@ type FSharpSnapshotGenerator
 
         let keyBuilderName =
             let props =
-                key.Properties
-                |> Seq.map (fun p -> (p.Name |> code.Literal))
-                |> join ", "
+                key.Properties |> Seq.map (fun p -> (p.Name |> code.Literal)) |> join ", "
 
-            let methodName =
-                if isPrimary then
-                    "HasKey"
-                else
-                    "HasAlternateKey"
+            let methodName = if isPrimary then "HasKey" else "HasAlternateKey"
 
             sprintf "%s.%s(%s)" entityTypeBuilderName methodName props
 
-        let keyAnnotations =
-            generateKeyAnnotations keyBuilderName key
+        let keyAnnotations = generateKeyAnnotations keyBuilderName key
 
         stringBuilder {
             ""
@@ -345,15 +317,11 @@ type FSharpSnapshotGenerator
         let otherKeys =
             if isNull pk || pk.DeclaringEntityType.IsOwned() then
                 keys
-                |> Seq.filter
-                    (fun k ->
-                        k <> pk
-                        && (k.GetReferencingForeignKeys() |> Seq.isEmpty
-                            || k.GetAnnotations()
-                               |> Seq.exists
-                                   (fun a ->
-                                       a.Name
-                                       <> RelationalAnnotationNames.UniqueConstraintMappings)))
+                |> Seq.filter (fun k ->
+                    k <> pk
+                    && (k.GetReferencingForeignKeys() |> Seq.isEmpty
+                        || k.GetAnnotations()
+                           |> Seq.exists (fun a -> a.Name <> RelationalAnnotationNames.UniqueConstraintMappings)))
                 |> Seq.map (fun k -> generateKey entityTypeBuilderName k false)
             else
                 Seq.empty
@@ -374,30 +342,22 @@ type FSharpSnapshotGenerator
 
         let indexParams =
             if isNull idx.Name then
-                String.Join(
-                    ", ",
-                    (idx.Properties
-                     |> Seq.map (fun p -> p.Name |> code.Literal))
-                )
+                String.Join(", ", (idx.Properties |> Seq.map (fun p -> p.Name |> code.Literal)))
             else
                 sprintf
                     "[| %s |], %s"
-                    (String.Join(
-                        "; ",
-                        (idx.Properties
-                         |> Seq.map (fun p -> p.Name |> code.Literal))
-                    ))
+                    (String.Join("; ", (idx.Properties |> Seq.map (fun p -> p.Name |> code.Literal))))
                     (code.Literal idx.Name)
 
-        let indexBuilderName =
-            sprintf "%s.HasIndex(%s)" entityTypeBuilderName indexParams
+        let indexBuilderName = sprintf "%s.HasIndex(%s)" entityTypeBuilderName indexParams
 
         stringBuilder {
             ""
             indexBuilderName
 
             indent {
-                if idx.IsUnique then ".IsUnique()"
+                if idx.IsUnique then
+                    ".IsUnique()"
 
                 generateIndexAnnotations indexBuilderName idx
             }
@@ -424,8 +384,7 @@ type FSharpSnapshotGenerator
                     ""
             | _ -> ""
 
-        let propsToWrite =
-            props |> Seq.map writeProperty |> join "; "
+        let propsToWrite = props |> Seq.map writeProperty |> join "; "
 
         $"{{| {propsToWrite} |}}"
 
@@ -445,21 +404,20 @@ type FSharpSnapshotGenerator
                 ""
 
         let schema =
-            if String.IsNullOrEmpty(sequence.Schema) |> not
-               && sequence.Model.GetDefaultSchema()
-                  <> sequence.Schema then
+            if
+                String.IsNullOrEmpty(sequence.Schema) |> not
+                && sequence.Model.GetDefaultSchema() <> sequence.Schema
+            then
                 $", {code.Literal sequence.Schema}"
             else
                 ""
 
         let lines =
             seq {
-                if sequence.StartValue
-                   <> (Sequence.DefaultStartValue |> int64) then
+                if sequence.StartValue <> (Sequence.DefaultStartValue |> int64) then
                     $".StartsAt({code.Literal sequence.StartValue})"
 
-                if sequence.IncrementBy
-                   <> Sequence.DefaultIncrementBy then
+                if sequence.IncrementBy <> Sequence.DefaultIncrementBy then
                     $".IncrementsBy({code.Literal sequence.IncrementBy})"
 
                 if sequence.MinValue <> Sequence.DefaultMinValue then
@@ -518,13 +476,10 @@ type FSharpSnapshotGenerator
             else
                 defaultValue ()
 
-        let annotationList =
-            entityType.GetAnnotations() |> Seq.toList
+        let annotationList = entityType.GetAnnotations() |> Seq.toList
 
         let findInList (a: IAnnotation list) name =
-            a
-            |> List.tryFind (fun an -> an.Name = name)
-            |> Option.toObj
+            a |> List.tryFind (fun an -> an.Name = name) |> Option.toObj
 
         let discriminatorPropertyAnnotation =
             findInList annotationList CoreAnnotationNames.DiscriminatorProperty
@@ -551,77 +506,55 @@ type FSharpSnapshotGenerator
 
 
 
-        let tableNameAnnotation =
-            tryGetAnnotationByName RelationalAnnotationNames.TableName
+        let tableNameAnnotation = tryGetAnnotationByName RelationalAnnotationNames.TableName
 
-        if annotationAndValueNotNull tableNameAnnotation
-           || (isNull entityType.BaseType) then
+        if annotationAndValueNotNull tableNameAnnotation || (isNull entityType.BaseType) then
 
-            let tableName =
-                getAnnotationValue tableNameAnnotation entityType.GetTableName
+            let tableName = getAnnotationValue tableNameAnnotation entityType.GetTableName
 
             if notNull tableName || notNull tableNameAnnotation then
-                sb
-                    .AppendLine("")
-                    .Append(entityTypeBuilderName)
-                    .Append(".ToTable(")
-                |> ignore
+                sb.AppendLine("").Append(entityTypeBuilderName).Append(".ToTable(") |> ignore
 
-                let schemaAnnotation =
-                    tryGetAnnotationByName RelationalAnnotationNames.Schema
+                let schemaAnnotation = tryGetAnnotationByName RelationalAnnotationNames.Schema
 
-                let schema =
-                    getAnnotationValue schemaAnnotation entityType.GetSchema
+                let schema = getAnnotationValue schemaAnnotation entityType.GetSchema
 
-                if isNull tableName
-                   && (isNull schemaAnnotation || isNull schema) then
-                    sb.Append(sprintf "(string %s)" (code.UnknownLiteral tableName))
-                    |> ignore
+                if isNull tableName && (isNull schemaAnnotation || isNull schema) then
+                    sb.Append(sprintf "(string %s)" (code.UnknownLiteral tableName)) |> ignore
                 else
                     sb.Append(code.UnknownLiteral tableName) |> ignore
 
                 if notNull tableNameAnnotation then
-                    annotations.Remove(tableNameAnnotation.Name)
-                    |> ignore
+                    annotations.Remove(tableNameAnnotation.Name) |> ignore
 
                 let isExcludedAnnotation =
                     tryGetAnnotationByName RelationalAnnotationNames.IsTableExcludedFromMigrations
 
-                if notNull schema
-                   || (notNull schemaAnnotation && notNull tableName) then
-                    if isNull schema
-                       && (notNull isExcludedAnnotation
-                           && (isExcludedAnnotation.Value :?> Nullable<bool>)
-                               .GetValueOrDefault()
-                              <> true) then
-                        sb.Append(sprintf ", (string %s)" (code.UnknownLiteral schema))
-                        |> ignore
+                if notNull schema || (notNull schemaAnnotation && notNull tableName) then
+                    if
+                        isNull schema
+                        && (notNull isExcludedAnnotation
+                            && (isExcludedAnnotation.Value :?> Nullable<bool>).GetValueOrDefault() <> true)
+                    then
+                        sb.Append(sprintf ", (string %s)" (code.UnknownLiteral schema)) |> ignore
                     elif notNull schema then
-                        sb.Append(sprintf ", %s" (code.UnknownLiteral schema))
-                        |> ignore
+                        sb.Append(sprintf ", %s" (code.UnknownLiteral schema)) |> ignore
 
                 if notNull isExcludedAnnotation then
-                    if (isExcludedAnnotation.Value :?> Nullable<bool>)
-                        .GetValueOrDefault() then
-                        sb.Append ", (fun t -> t.ExcludeFromMigrations())"
-                        |> ignore
+                    if (isExcludedAnnotation.Value :?> Nullable<bool>).GetValueOrDefault() then
+                        sb.Append ", (fun t -> t.ExcludeFromMigrations())" |> ignore
 
-                    annotations.Remove(isExcludedAnnotation.Name)
-                    |> ignore
+                    annotations.Remove(isExcludedAnnotation.Name) |> ignore
 
 
                 sb.Append ") |> ignore" |> ignore
 
-        annotations.Remove(RelationalAnnotationNames.Schema)
-        |> ignore
+        annotations.Remove(RelationalAnnotationNames.Schema) |> ignore
 
-        let viewNameAnnotation =
-            tryGetAnnotationByName RelationalAnnotationNames.ViewName
+        let viewNameAnnotation = tryGetAnnotationByName RelationalAnnotationNames.ViewName
 
-        if (annotationAndValueNotNull viewNameAnnotation
-            || isNull entityType.BaseType) then
-            let viewName =
-                getAnnotationValue viewNameAnnotation entityType.GetViewName
+        if (annotationAndValueNotNull viewNameAnnotation || isNull entityType.BaseType) then
+            let viewName = getAnnotationValue viewNameAnnotation entityType.GetViewName
 
             if notNull viewName then
                 sb
@@ -630,8 +563,7 @@ type FSharpSnapshotGenerator
                 |> ignore
 
                 if notNull viewNameAnnotation then
-                    annotations.Remove(viewNameAnnotation.Name)
-                    |> ignore
+                    annotations.Remove(viewNameAnnotation.Name) |> ignore
 
                 let viewSchemaAnnotation =
                     tryGetAnnotationByName RelationalAnnotationNames.ViewSchema
@@ -639,32 +571,24 @@ type FSharpSnapshotGenerator
                 if annotationAndValueNotNull viewSchemaAnnotation then
                     let viewSchemaAnnotationValue = viewSchemaAnnotation.Value :?> string
 
-                    sb
-                        .Append(", ")
-                        .Append(code.UnknownLiteral viewSchemaAnnotationValue)
-                    |> ignore
+                    sb.Append(", ").Append(code.UnknownLiteral viewSchemaAnnotationValue) |> ignore
 
-                    annotations.Remove(viewSchemaAnnotation.Name)
-                    |> ignore
+                    annotations.Remove(viewSchemaAnnotation.Name) |> ignore
 
                 sb.Append ") |> ignore" |> ignore
 
-        annotations.Remove(RelationalAnnotationNames.ViewSchema)
-        |> ignore
+        annotations.Remove(RelationalAnnotationNames.ViewSchema) |> ignore
 
-        annotations.Remove(RelationalAnnotationNames.ViewDefinitionSql)
-        |> ignore
+        annotations.Remove(RelationalAnnotationNames.ViewDefinitionSql) |> ignore
 
         let functionNameAnnotation =
             tryGetAnnotationByName RelationalAnnotationNames.FunctionName
 
-        if annotationAndValueNotNull functionNameAnnotation
-           || isNull entityType.BaseType then
+        if annotationAndValueNotNull functionNameAnnotation || isNull entityType.BaseType then
             let functionName =
                 getAnnotationValue functionNameAnnotation entityType.GetFunctionName
 
-            if notNull functionName
-               || notNull functionNameAnnotation then
+            if notNull functionName || notNull functionNameAnnotation then
                 sb
                     .AppendLine("")
                     .Append(entityTypeBuilderName)
@@ -674,16 +598,12 @@ type FSharpSnapshotGenerator
                 |> ignore
 
                 if notNull functionNameAnnotation then
-                    annotations.Remove(functionNameAnnotation.Name)
-                    |> ignore
+                    annotations.Remove(functionNameAnnotation.Name) |> ignore
 
-        let sqlQueryAnnotation =
-            tryGetAnnotationByName RelationalAnnotationNames.SqlQuery
+        let sqlQueryAnnotation = tryGetAnnotationByName RelationalAnnotationNames.SqlQuery
 
-        if annotationAndValueNotNull sqlQueryAnnotation
-           || isNull entityType.BaseType then
-            let sqlQuery =
-                getAnnotationValue sqlQueryAnnotation entityType.GetSqlQuery
+        if annotationAndValueNotNull sqlQueryAnnotation || isNull entityType.BaseType then
+            let sqlQuery = getAnnotationValue sqlQueryAnnotation entityType.GetSqlQuery
 
             if notNull sqlQuery || notNull sqlQueryAnnotation then
                 sb
@@ -695,15 +615,11 @@ type FSharpSnapshotGenerator
                 |> ignore
 
                 if notNull sqlQueryAnnotation then
-                    annotations.Remove(sqlQueryAnnotation.Name)
-                    |> ignore
+                    annotations.Remove(sqlQueryAnnotation.Name) |> ignore
 
         if hasDiscriminator then
 
-            sb
-                .AppendLine("")
-                .Append(entityTypeBuilderName)
-                .Append(".HasDiscriminator")
+            sb.AppendLine("").Append(entityTypeBuilderName).Append(".HasDiscriminator")
             |> ignore
 
             if annotationAndValueNotNull discriminatorPropertyAnnotation then
@@ -712,9 +628,7 @@ type FSharpSnapshotGenerator
 
                 let propertyClrType =
                     match discriminatorProperty |> findValueConverter with
-                    | Some c ->
-                        c.ProviderClrType
-                        |> makeNullable discriminatorProperty.IsNullable
+                    | Some c -> c.ProviderClrType |> makeNullable discriminatorProperty.IsNullable
                     | None -> discriminatorProperty.ClrType
 
                 sb
@@ -728,13 +642,9 @@ type FSharpSnapshotGenerator
                 sb.Append "()" |> ignore
 
             if annotationAndValueNotNull discriminatorMappingCompleteAnnotation then
-                let value =
-                    discriminatorMappingCompleteAnnotation.Value
+                let value = discriminatorMappingCompleteAnnotation.Value
 
-                sb
-                    .Append(".IsComplete(")
-                    .Append(code.UnknownLiteral(value))
-                    .Append(")")
+                sb.Append(".IsComplete(").Append(code.UnknownLiteral(value)).Append(")")
                 |> ignore
 
             if annotationAndValueNotNull discriminatorValueAnnotation then
@@ -750,11 +660,7 @@ type FSharpSnapshotGenerator
                     else
                         defaultValue
 
-                sb
-                    .Append(".HasValue(")
-                    .Append(code.UnknownLiteral(value))
-                    .Append(")")
-                |> ignore
+                sb.Append(".HasValue(").Append(code.UnknownLiteral(value)).Append(")") |> ignore
 
             sb.Append " |> ignore" |> ignore
 
@@ -775,9 +681,7 @@ type FSharpSnapshotGenerator
     member private this.generateForeignKey entityTypeBuilderName (fk: IForeignKey) =
 
         let literalPropNames (properties: seq<IProperty>) =
-            properties
-            |> Seq.map (fun p -> p.Name |> code.Literal)
-            |> join ", "
+            properties |> Seq.map (fun p -> p.Name |> code.Literal) |> join ", "
 
         let definition =
             if not fk.IsOwnership then
@@ -810,8 +714,7 @@ type FSharpSnapshotGenerator
             lines.Add $".WithOne({ptd})"
             lines.Add $".HasForeignKey({code.Literal fk.DeclaringEntityType.Name}, {literalPropNames fk.Properties})"
 
-            if fk.PrincipalKey
-               <> fk.PrincipalEntityType.FindPrimaryKey() then
+            if fk.PrincipalKey <> fk.PrincipalEntityType.FindPrimaryKey() then
 
                 lines.Add
                     $".HasPrincipalKey({code.Literal fk.PrincipalEntityType.Name}, {literalPropNames fk.PrincipalKey.Properties})"
@@ -822,8 +725,7 @@ type FSharpSnapshotGenerator
 
             lines.Add $".HasForeignKey({literalPropNames fk.Properties})"
 
-            if fk.PrincipalKey
-               <> fk.PrincipalEntityType.FindPrimaryKey() then
+            if fk.PrincipalKey <> fk.PrincipalEntityType.FindPrimaryKey() then
                 lines.Add $".HasPrincipalKey({literalPropNames fk.PrincipalKey.Properties})"
 
         if not fk.IsOwnership then
@@ -943,11 +845,7 @@ type FSharpSnapshotGenerator
                 | true, (true, _) -> counter <- counter + 1
                 | _ -> ()
 
-                "b"
-                + if counter = 0 then
-                      ""
-                  else
-                      counter.ToString()
+                "b" + if counter = 0 then "" else counter.ToString()
             else
                 "b"
 
@@ -992,10 +890,7 @@ type FSharpSnapshotGenerator
 
         let navigations =
             entityType.GetDeclaredNavigations()
-            |> Seq.filter
-                (fun n ->
-                    (not n.IsOnDependent)
-                    && (not n.ForeignKey.IsOwnership))
+            |> Seq.filter (fun n -> (not n.IsOnDependent) && (not n.ForeignKey.IsOwnership))
 
         stringBuilder {
             $"{builderName}.Entity({code.Literal entityType.Name}, (fun b ->"
@@ -1005,27 +900,19 @@ type FSharpSnapshotGenerator
 
     member private this.generateEntityTypes builderName (entities: IEntityType seq) =
 
-        let entitiesToWrite =
-            entities |> Seq.filter (findOwnership >> isNull)
+        let entitiesToWrite = entities |> Seq.filter (findOwnership >> isNull)
 
         let relationships =
             entitiesToWrite
-            |> Seq.filter
-                (fun e ->
-                    (e |> getDeclaredForeignKeys |> Seq.isEmpty |> not)
-                    || (e
-                        |> getDeclaredReferencingForeignKeys
-                        |> Seq.exists (fun fk -> fk.IsOwnership)))
+            |> Seq.filter (fun e ->
+                (e |> getDeclaredForeignKeys |> Seq.isEmpty |> not)
+                || (e |> getDeclaredReferencingForeignKeys |> Seq.exists (fun fk -> fk.IsOwnership)))
 
         let navigations =
             entitiesToWrite
-            |> Seq.filter
-                (fun e ->
-                    e.GetDeclaredNavigations()
-                    |> Seq.exists
-                        (fun n ->
-                            (not n.IsOnDependent)
-                            && (not n.ForeignKey.IsOwnership)))
+            |> Seq.filter (fun e ->
+                e.GetDeclaredNavigations()
+                |> Seq.exists (fun n -> (not n.IsOnDependent) && (not n.ForeignKey.IsOwnership)))
 
 
         stringBuilder {

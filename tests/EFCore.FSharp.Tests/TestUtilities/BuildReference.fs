@@ -13,6 +13,7 @@ type BuildReference =
     { CopyLocal: bool
       References: MetadataReference seq
       Path: string }
+
     static member ByName name copyLocal path =
         let references =
             DependencyContext.Default.CompileLibraries
@@ -57,13 +58,12 @@ type BuildSource =
       Sources: string list }
 
     static let checker = FSharpChecker.Create()
-    static let compilerLock = obj()
+    static let compilerLock = obj ()
 
     member this.BuildInMemory(references: string array) =
         let projectName = "TestProject"
 
-        let source =
-            String.Join(Environment.NewLine, this.Sources)
+        let source = String.Join(Environment.NewLine, this.Sources)
 
         let tmpDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
         Directory.CreateDirectory(tmpDir) |> ignore
@@ -83,15 +83,10 @@ type BuildSource =
                yield sourceFile |]
 
         let errors, exitCode =
-            lock compilerLock (fun () ->
-                checker.Compile(args)
-                |> Async.RunSynchronously
-            )
+            lock compilerLock (fun () -> checker.Compile(args) |> Async.RunSynchronously)
 
         if exitCode <> 0 then
-            let messages =
-                errors
-                |> Seq.map (fun e -> e.Message + Environment.NewLine)
+            let messages = errors |> Seq.map (fun e -> e.Message + Environment.NewLine)
 
             invalidOp (String.Join(Environment.NewLine, messages))
 
@@ -99,6 +94,9 @@ type BuildSource =
         let assembly = Assembly.Load(assemblyBytes)
 
         // Clean up temp files
-        try Directory.Delete(tmpDir, true) with _ -> ()
+        try
+            Directory.Delete(tmpDir, true)
+        with _ ->
+            ()
 
         assembly

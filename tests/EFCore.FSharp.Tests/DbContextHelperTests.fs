@@ -38,10 +38,7 @@ type MyContext() =
         |> ignore
 
     override __.OnModelCreating(modelBuilder) =
-        modelBuilder
-            .Entity<CompositeType>()
-            .HasKey([| "Key1"; "Key2" |])
-        |> ignore
+        modelBuilder.Entity<CompositeType>().HasKey([| "Key1"; "Key2" |]) |> ignore
 
 let createContext () =
     let ctx = new MyContext()
@@ -71,8 +68,7 @@ let DbContextHelperTests =
 
               let modified = { original with Title = "My New Title" }
 
-              updateEntity ctx (fun b -> b.Id) modified
-              |> ignore
+              updateEntity ctx (fun b -> b.Id) modified |> ignore
 
               let expected =
                   { Id = original.Id
@@ -81,8 +77,7 @@ let DbContextHelperTests =
 
               let found = tryFindEntity<Blog> ctx original.Id
 
-              let actual =
-                  Expect.wantSome found "Should not be None"
+              let actual = Expect.wantSome found "Should not be None"
 
               Expect.equal actual expected "Record in context should match"
           }
@@ -101,22 +96,20 @@ let DbContextHelperTests =
 
               let modified =
                   { original with
-                        Value = "My New Content" }
+                      Value = "My New Content" }
 
-              updateEntity ctx (fun b -> [ box b.Key1; box b.Key2 ]) modified
-              |> ignore
+              updateEntity ctx (fun b -> [ box b.Key1; box b.Key2 ]) modified |> ignore
 
               let expected =
                   { Key1 = 1
                     Key2 = 2
                     Value = "My New Content" }
 
-              let key: obj [] = [| original.Key1; original.Key2 |]
+              let key: obj[] = [| original.Key1; original.Key2 |]
 
               let found = tryFindEntity<CompositeType> ctx key
 
-              let actual =
-                  Expect.wantSome found "Should not be None"
+              let actual = Expect.wantSome found "Should not be None"
 
               Expect.equal actual expected "Record in context should match"
           }
@@ -148,8 +141,7 @@ let DbContextHelperTests =
                   }
                   |> Async.RunSynchronously
 
-              let actual =
-                  Expect.wantSome found "Should not be None"
+              let actual = Expect.wantSome found "Should not be None"
 
               Expect.equal actual expected "Record in context should match"
           }
@@ -177,14 +169,11 @@ let DbContextHelperTests =
 
                       let! _ = updateEntityAsync ctx (fun b -> b.Id :> obj) modified
 
-                      return!
-                          tryFindEntityTaskAsync<Blog> ctx original.Id
-                          |> Async.AwaitTask
+                      return! tryFindEntityTaskAsync<Blog> ctx original.Id |> Async.AwaitTask
                   }
                   |> Async.RunSynchronously
 
-              let actual =
-                  Expect.wantSome found "Should not be None"
+              let actual = Expect.wantSome found "Should not be None"
 
               Expect.equal actual expected "Record in context should match"
           }
@@ -200,9 +189,7 @@ let DbContextHelperTests =
           test "tryFindEntityAsync returns None if no matching entry found" {
               use ctx = createContext ()
 
-              let found =
-                  tryFindEntityAsync<Blog> ctx (Guid.NewGuid())
-                  |> Async.RunSynchronously
+              let found = tryFindEntityAsync<Blog> ctx (Guid.NewGuid()) |> Async.RunSynchronously
 
               Expect.isNone found "Should be None"
           } ]
@@ -224,8 +211,7 @@ let DbSetTests =
               addEntity ctx blog
               saveChanges ctx
 
-              let result =
-                  toListAsync ctx.Blogs |> Async.RunSynchronously
+              let result = toListAsync ctx.Blogs |> Async.RunSynchronously
 
               Expect.equal [ blog ] result "Should be same"
           }
@@ -242,8 +228,7 @@ let DbSetTests =
               addEntity ctx blog
               saveChanges ctx
 
-              let result =
-                  tryFirstAsync ctx.Blogs |> Async.RunSynchronously
+              let result = tryFirstAsync ctx.Blogs |> Async.RunSynchronously
 
               let actual = Expect.wantSome result "should have one"
               Expect.equal blog actual "Should be same"
@@ -252,8 +237,7 @@ let DbSetTests =
           test "tryFirstAsync should return None" {
               use ctx = createContext ()
 
-              let result =
-                  tryFirstAsync ctx.Blogs |> Async.RunSynchronously
+              let result = tryFirstAsync ctx.Blogs |> Async.RunSynchronously
 
               Expect.isNone result "should have none"
           }
@@ -294,8 +278,7 @@ let DbSetTests =
               saveChanges ctx
 
               let result =
-                  tryFilterFirstAsync <@ fun x -> x.Id = id @> ctx.Blogs
-                  |> Async.RunSynchronously
+                  tryFilterFirstAsync <@ fun x -> x.Id = id @> ctx.Blogs |> Async.RunSynchronously
 
               let actual = Expect.wantSome result "should have one"
               Expect.equal blog actual "Should be same"
@@ -306,8 +289,7 @@ let DbSetTests =
               let id = Guid.NewGuid()
 
               let result =
-                  tryFilterFirstAsync <@ fun x -> x.Id = id @> ctx.Blogs
-                  |> Async.RunSynchronously
+                  tryFilterFirstAsync <@ fun x -> x.Id = id @> ctx.Blogs |> Async.RunSynchronously
 
               Expect.isNone result "should have none"
           }
@@ -324,8 +306,7 @@ let DbSetTests =
               addEntity ctx blog
               saveChanges ctx
 
-              let result =
-                  tryFilterFirst <@ fun x -> x.Id = id @> ctx.Blogs
+              let result = tryFilterFirst <@ fun x -> x.Id = id @> ctx.Blogs
 
               let actual = Expect.wantSome result "should have one"
               Expect.equal blog actual "Should be same"
@@ -335,8 +316,7 @@ let DbSetTests =
               use ctx = createContext ()
               let id = Guid.NewGuid()
 
-              let result =
-                  tryFilterFirst <@ fun x -> x.Id = id @> ctx.Blogs
+              let result = tryFilterFirst <@ fun x -> x.Id = id @> ctx.Blogs
 
               Expect.isNone result "should have none"
           }
@@ -353,9 +333,7 @@ let DbSetTests =
               addEntity ctx blog
               saveChanges ctx
 
-              let result =
-                  ctx.Blogs.TryFirstAsync()
-                  |> Async.RunSynchronously
+              let result = ctx.Blogs.TryFirstAsync() |> Async.RunSynchronously
 
               let actual = Expect.wantSome result "should have one"
               Expect.equal blog actual "Should be same"
@@ -364,9 +342,7 @@ let DbSetTests =
           test "TryFirstAsync extension should return None" {
               use ctx = createContext ()
 
-              let result =
-                  ctx.Blogs.TryFirstAsync()
-                  |> Async.RunSynchronously
+              let result = ctx.Blogs.TryFirstAsync() |> Async.RunSynchronously
 
               Expect.isNone result "should have none"
           }
@@ -384,9 +360,7 @@ let DbSetTests =
               saveChanges ctx
 
               let result =
-                  ctx.Blogs.TryFirstTaskAsync()
-                  |> Async.AwaitTask
-                  |> Async.RunSynchronously
+                  ctx.Blogs.TryFirstTaskAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
               let actual = Expect.wantSome result "should have one"
               Expect.equal blog actual "Should be same"
@@ -396,9 +370,7 @@ let DbSetTests =
               use ctx = createContext ()
 
               let result =
-                  ctx.Blogs.TryFirstTaskAsync()
-                  |> Async.AwaitTask
-                  |> Async.RunSynchronously
+                  ctx.Blogs.TryFirstTaskAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
               Expect.isNone result "should have none"
           }
@@ -439,9 +411,7 @@ let DbSetTests =
               addEntity ctx blog
               saveChanges ctx
 
-              let result =
-                  ctx.Blogs.TryFirstAsync(fun x -> x.Id = id)
-                  |> Async.RunSynchronously
+              let result = ctx.Blogs.TryFirstAsync(fun x -> x.Id = id) |> Async.RunSynchronously
 
               let actual = Expect.wantSome result "should have one"
               Expect.equal blog actual "Should be same"
@@ -473,9 +443,7 @@ let DbSetTests =
               use ctx = createContext ()
               let id = Guid.NewGuid()
 
-              let result =
-                  ctx.Blogs.TryFirstAsync(fun x -> x.Id = id)
-                  |> Async.RunSynchronously
+              let result = ctx.Blogs.TryFirstAsync(fun x -> x.Id = id) |> Async.RunSynchronously
 
               Expect.isNone result "should have none"
           }

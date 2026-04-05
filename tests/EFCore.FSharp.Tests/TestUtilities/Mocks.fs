@@ -37,11 +37,14 @@ type MockHistoryRepository() =
 
         member __.CreateAsync(cancellationToken: CancellationToken) = Task.CompletedTask
 
-        member __.get_LockReleaseBehavior() = Unchecked.defaultof<LockReleaseBehavior>
+        member __.get_LockReleaseBehavior() =
+            Unchecked.defaultof<LockReleaseBehavior>
 
-        member __.AcquireDatabaseLock() = Unchecked.defaultof<IMigrationsDatabaseLock>
+        member __.AcquireDatabaseLock() =
+            Unchecked.defaultof<IMigrationsDatabaseLock>
 
-        member __.AcquireDatabaseLockAsync(cancellationToken: CancellationToken) = Task.FromResult(Unchecked.defaultof<IMigrationsDatabaseLock>)
+        member __.AcquireDatabaseLockAsync(cancellationToken: CancellationToken) =
+            Task.FromResult(Unchecked.defaultof<IMigrationsDatabaseLock>)
 
 type MockProvider() =
     interface IDatabaseProvider with

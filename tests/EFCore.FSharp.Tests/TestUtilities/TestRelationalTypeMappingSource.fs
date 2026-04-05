@@ -11,7 +11,7 @@ open Microsoft.EntityFrameworkCore.Storage
 type internal IntArrayTypeMapping =
     inherit RelationalTypeMapping
 
-    new() = { inherit RelationalTypeMapping("some_int_array_mapping", (typeof<int []>)) }
+    new() = { inherit RelationalTypeMapping("some_int_array_mapping", (typeof<int[]>)) }
 
     new(parameters) = { inherit RelationalTypeMapping(parameters) }
 
@@ -50,11 +50,9 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
     let _defaultBoolMapping =
         BoolTypeMapping("default_bool_mapping") :> RelationalTypeMapping
 
-    let _someIntMapping =
-        IntTypeMapping("some_int_mapping") :> RelationalTypeMapping
+    let _someIntMapping = IntTypeMapping("some_int_mapping") :> RelationalTypeMapping
 
-    let _intArray =
-        IntArrayTypeMapping() :> RelationalTypeMapping
+    let _intArray = IntArrayTypeMapping() :> RelationalTypeMapping
 
     let _defaultDecimalMapping =
         DecimalTypeMapping("default_decimal_mapping") :> RelationalTypeMapping
@@ -93,7 +91,7 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
           (typeof<decimal>, _defaultDecimalMapping)
           (typeof<TimeSpan>, _defaultTimeSpanMapping)
           (typeof<string>, _string)
-          (typeof<int []>, _intArray) ]
+          (typeof<int[]>, _intArray) ]
         |> dict
         :?> IReadOnlyDictionary<Type, RelationalTypeMapping>
 
@@ -115,12 +113,10 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
 
         match clrType with
         | t when t = typeof<string> ->
-            let isAnsi =
-                mappingInfo.IsUnicode.GetValueOrDefault()
+            let isAnsi = mappingInfo.IsUnicode.GetValueOrDefault()
 
             let isFixedLength =
-                mappingInfo.IsFixedLength.HasValue
-                && mappingInfo.IsFixedLength.Value
+                mappingInfo.IsFixedLength.HasValue && mappingInfo.IsFixedLength.Value
 
             let baseName =
                 match isAnsi, isFixedLength with
@@ -140,11 +136,7 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
 
             let name =
                 if isStoreTypeNameNull then
-                    let sizeStr =
-                        if size.HasValue then
-                            string size.Value
-                        else
-                            "max"
+                    let sizeStr = if size.HasValue then string size.Value else "max"
 
                     sprintf "%s(%s)" baseName sizeStr
                 else
@@ -158,25 +150,18 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
 
             TestStringTypeMapping(name, dbType, (not isAnsi), size, isFixedLength) :> RelationalTypeMapping
 
-        | t when t = typeof<byte []> ->
+        | t when t = typeof<byte[]> ->
             if mappingInfo.IsRowVersion.GetValueOrDefault() then
                 _rowversion
             else
                 let size =
-                    if mappingInfo.Size.HasValue then
-                        mappingInfo.Size
-                    else if mappingInfo.IsKeyOrIndex then
-                        Nullable<int>(900)
-                    else
-                        Nullable<int>()
+                    if mappingInfo.Size.HasValue then mappingInfo.Size
+                    else if mappingInfo.IsKeyOrIndex then Nullable<int>(900)
+                    else Nullable<int>()
 
                 let name =
                     if isNull storeTypeName then
-                        let sizeStr =
-                            if size.HasValue then
-                                string size.Value
-                            else
-                                "max"
+                        let sizeStr = if size.HasValue then string size.Value else "max"
 
                         sprintf "just_binary(%s)" sizeStr
                     else
@@ -200,13 +185,13 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
                     mapping
             | _ ->
 
-                let successFromName, mappingFromName =
-                    _simpleNameMappings.TryGetValue storeTypeName
+                let successFromName, mappingFromName = _simpleNameMappings.TryGetValue storeTypeName
 
-                if (not isStoreTypeNameNull)
-                   && (clrType = null
-                       || mappingFromName.ClrType = clrType)
-                   && successFromName then
+                if
+                    (not isStoreTypeNameNull)
+                    && (clrType = null || mappingFromName.ClrType = clrType)
+                    && successFromName
+                then
                     mappingFromName
                 else
                     null

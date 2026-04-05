@@ -8,15 +8,9 @@ open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 
 type FSharpMigrationsModelDiffer
-    (
-        typeMappingSource,
-        migrationsAnnotations,
-        changeDetector,
-        updateAdapterFactory,
-        commandBatchPreparerDependencies
-    ) =
-    inherit MigrationsModelDiffer
-        (
+    (typeMappingSource, migrationsAnnotations, changeDetector, updateAdapterFactory, commandBatchPreparerDependencies) =
+    inherit
+        MigrationsModelDiffer(
             typeMappingSource,
             migrationsAnnotations,
             changeDetector,
@@ -28,23 +22,17 @@ type FSharpMigrationsModelDiffer
         let clrType = p.ClrType
         let isPrimaryKey = p.IsPrimaryKey()
 
-        let isNullable =
-            (isOptionType clrType || isNullableType clrType)
+        let isNullable = (isOptionType clrType || isNullableType clrType)
 
         isNullable && not isPrimaryKey
 
     override _.Diff
-        (
-            source: IColumn,
-            target: IColumn,
-            diffContext: MigrationsModelDiffer.DiffContext
-        ) : MigrationOperation seq =
+        (source: IColumn, target: IColumn, diffContext: MigrationsModelDiffer.DiffContext)
+        : MigrationOperation seq =
 
-        let sourceTypeProperty =
-            (source.PropertyMappings |> Seq.head).Property
+        let sourceTypeProperty = (source.PropertyMappings |> Seq.head).Property
 
-        let targetTypeProperty =
-            (target.PropertyMappings |> Seq.head).Property
+        let targetTypeProperty = (target.PropertyMappings |> Seq.head).Property
 
         (source :?> Column).IsNullable <- isNullableType sourceTypeProperty
         (target :?> Column).IsNullable <- isNullableType targetTypeProperty
@@ -58,8 +46,7 @@ type FSharpMigrationsModelDiffer
             [<Optional; DefaultParameterValue(false)>] ``inline``: bool
         ) : MigrationOperation seq =
 
-        let sourceTypeProperty =
-            (source.PropertyMappings |> Seq.head).Property
+        let sourceTypeProperty = (source.PropertyMappings |> Seq.head).Property
 
         (source :?> Column).IsNullable <- isNullableType sourceTypeProperty
 

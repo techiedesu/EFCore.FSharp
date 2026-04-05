@@ -15,14 +15,8 @@ open EntityFrameworkCore.FSharp
 
 type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
-    let toOnedimensionalArray firstDimension (a: obj [,]) =
-        Array.init
-            a.Length
-            (fun i ->
-                if firstDimension then
-                    a.[i, 0]
-                else
-                    a.[0, i])
+    let toOnedimensionalArray firstDimension (a: obj[,]) =
+        Array.init a.Length (fun i -> if firstDimension then a.[i, 0] else a.[0, i])
 
     let sanitiseName name =
         if FSharpUtilities.isKeyword name then
@@ -55,8 +49,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         if nullableParameter.HasValue then
             let value = nullableParameter |> code.UnknownLiteral
 
-            $",%s{sanitiseName name} = Nullable(%s{value})"
-            |> Some
+            $",%s{sanitiseName name} = Nullable(%s{value})" |> Some
         else
             None
 
@@ -67,18 +60,12 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             |> Seq.map (fun a -> $".Annotation(%s{code.Literal a.Name}, %s{code.UnknownLiteral a.Value})")
 
         if lines |> Seq.isEmpty then
-            if includeIgnore then
-                ") |> ignore"
-            else
-                ")"
+            if includeIgnore then ") |> ignore" else ")"
 
         elif lines |> Seq.length = 1 then
             let line = lines |> Seq.head
 
-            if includeIgnore then
-                $"){line} |> ignore"
-            else
-                $"){line}"
+            if includeIgnore then $"){line} |> ignore" else $"){line}"
 
         else
             let last = lines |> Seq.last
@@ -86,12 +73,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             let tail =
                 lines
                 |> Seq.tail
-                |> Seq.map
-                    (fun l ->
-                        if includeIgnore && l = last then
-                            l + " |> ignore"
-                        else
-                            l)
+                |> Seq.map (fun l -> if includeIgnore && l = last then l + " |> ignore" else l)
 
             stringBuilder {
                 ")" + (lines |> Seq.head)
@@ -114,9 +96,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             let last = lines |> Seq.last
 
             let tail =
-                lines
-                |> Seq.tail
-                |> Seq.map (fun l -> if l = last then l + " |> ignore" else l)
+                lines |> Seq.tail |> Seq.map (fun l -> if l = last then l + " |> ignore" else l)
 
             stringBuilder {
                 lines |> Seq.head
@@ -234,8 +214,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 if isOptionType op.ClrType then
                     $").SetValueConverter(OptionConverter<%s{op.ClrType |> unwrapOptionType |> code.Reference}> ()"
 
-                let hasNoOldAnnotations =
-                    op.OldColumn.GetAnnotations() |> Seq.isEmpty
+                let hasNoOldAnnotations = op.OldColumn.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
 
@@ -251,8 +230,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
             indent {
 
-                let hasNoOldAnnotations =
-                    op.OldDatabase.GetAnnotations() |> Seq.isEmpty
+                let hasNoOldAnnotations = op.OldDatabase.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
 
@@ -277,8 +255,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeNullableParameterIfValue "oldMaxValue " op.OldSequence.MaxValue
                 writeParameterIfTrue op.OldSequence.IsCyclic "oldCyclic" "true"
 
-                let hasNoOldAnnotations =
-                    op.OldSequence.GetAnnotations() |> Seq.isEmpty
+                let hasNoOldAnnotations = op.OldSequence.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
 
@@ -295,8 +272,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeName op.Name
                 writeSchema op.Schema
 
-                let hasNoOldAnnotations =
-                    op.OldTable.GetAnnotations() |> Seq.isEmpty
+                let hasNoOldAnnotations = op.OldTable.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
 
@@ -399,11 +375,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 ",columns = (fun table -> "
                 "{|"
 
-                indent {
-                    op.Columns
-                    |> Seq.filter notNull
-                    |> Seq.map writeColumn
-                }
+                indent { op.Columns |> Seq.filter notNull |> Seq.map writeColumn }
 
                 "|})"
             }
@@ -411,10 +383,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         let writeUniqueConstraint (uc: AddUniqueConstraintOperation) =
 
             let constraints =
-                uc.Columns
-                |> Seq.map (fun c -> map.[c])
-                |> Seq.toList
-                |> code.Lambda
+                uc.Columns |> Seq.map (fun c -> map.[c]) |> Seq.toList |> code.Lambda
 
             stringBuilder {
                 $"table.UniqueConstraint({code.Literal uc.Name}, {constraints}"
@@ -435,16 +404,12 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 "table.ForeignKey("
 
                 let constraints =
-                    fk.Columns
-                    |> Seq.map (fun c -> map.[c])
-                    |> Seq.toList
-                    |> code.Lambda
+                    fk.Columns |> Seq.map (fun c -> map.[c]) |> Seq.toList |> code.Lambda
 
                 indent {
                     writeName fk.Name
 
-                    if fk.Columns.Length = 1
-                       || isNull fk.PrincipalColumns then
+                    if fk.Columns.Length = 1 || isNull fk.PrincipalColumns then
                         $",column = {constraints}"
                     else
                         $",columns = {constraints}"
@@ -482,22 +447,16 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                                 let pkName = op.PrimaryKey.Name |> code.Literal
 
                                 let pkColumns =
-                                    op.PrimaryKey.Columns
-                                    |> Seq.map (fun c -> map.[c])
-                                    |> Seq.toList
-                                    |> code.Lambda
+                                    op.PrimaryKey.Columns |> Seq.map (fun c -> map.[c]) |> Seq.toList |> code.Lambda
 
                                 $"table.PrimaryKey(%s{pkName}, %s{pkColumns}"
                                 annotations true (op.PrimaryKey.GetAnnotations())
 
-                            op.UniqueConstraints
-                            |> Seq.map writeUniqueConstraint
+                            op.UniqueConstraints |> Seq.map writeUniqueConstraint
 
-                            op.CheckConstraints
-                            |> Seq.map writeCheckConstraint
+                            op.CheckConstraints |> Seq.map writeCheckConstraint
 
-                            op.ForeignKeys
-                            |> Seq.map writeForeignKeyConstraint
+                            op.ForeignKeys |> Seq.map writeForeignKeyConstraint
                         }
 
                         ")"
@@ -707,11 +666,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     if length0 = 1 && length1 = 1 then
                         sprintf "value = %s :> obj" (op.Values.[0, 0] |> code.UnknownLiteral)
                     elif length0 = 1 then
-                        sprintf
-                            "values = %s"
-                            (op.Values
-                             |> toOnedimensionalArray false
-                             |> code.Literal)
+                        sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> code.Literal)
                     elif length1 = 1 then
                         let arr = op.Values |> toOnedimensionalArray true
                         let lines = code.Literal(arr, true)
@@ -747,15 +702,9 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 if length0 = 1 && length1 = 1 then
                     yield sprintf "keyValue = %s" (op.KeyValues.[0, 0] |> code.UnknownLiteral)
                 elif length0 = 1 then
-                    yield
-                        sprintf
-                            "keyValues = %s"
-                            (op.KeyValues
-                             |> toOnedimensionalArray false
-                             |> code.Literal)
+                    yield sprintf "keyValues = %s" (op.KeyValues |> toOnedimensionalArray false |> code.Literal)
                 elif length1 = 1 then
-                    let arr =
-                        op.KeyValues |> toOnedimensionalArray true
+                    let arr = op.KeyValues |> toOnedimensionalArray true
 
                     let lines = code.Literal(arr, true)
                     yield sprintf "keyValues = %s" lines
@@ -788,15 +737,9 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 if length0 = 1 && length1 = 1 then
                     yield sprintf "keyValue = %s" (op.KeyValues.[0, 0] |> code.UnknownLiteral)
                 elif length0 = 1 then
-                    yield
-                        sprintf
-                            "keyValues = %s"
-                            (op.KeyValues
-                             |> toOnedimensionalArray false
-                             |> code.Literal)
+                    yield sprintf "keyValues = %s" (op.KeyValues |> toOnedimensionalArray false |> code.Literal)
                 elif length1 = 1 then
-                    let arr =
-                        op.KeyValues |> toOnedimensionalArray true
+                    let arr = op.KeyValues |> toOnedimensionalArray true
 
                     let lines = code.Literal(arr, true)
                     yield sprintf "keyValues = %s" lines
@@ -814,12 +757,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 if length0 = 1 && length1 = 1 then
                     yield sprintf "value = %s" (op.Values.[0, 0] |> code.UnknownLiteral)
                 elif length0 = 1 then
-                    yield
-                        sprintf
-                            "values = %s"
-                            (op.Values
-                             |> toOnedimensionalArray false
-                             |> code.Literal)
+                    yield sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> code.Literal)
                 elif length1 = 1 then
                     let arr = op.Values |> toOnedimensionalArray true
                     let lines = code.Literal(arr, true)
@@ -893,9 +831,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             | :? UpdateDataOperation as op' -> op' |> generateUpdateDataOperation
             | :? AddCheckConstraintOperation as op' -> op' |> generateAddCheckConstraintOperation
             | :? DropCheckConstraintOperation as op' -> op' |> generateDropCheckConstraintOperation
-            | _ ->
-                op
-                |> invalidOp ((op.GetType()) |> DesignStrings.UnknownOperation) // The failure case
+            | _ -> op |> invalidOp ((op.GetType()) |> DesignStrings.UnknownOperation) // The failure case
 
         builderName + result
 

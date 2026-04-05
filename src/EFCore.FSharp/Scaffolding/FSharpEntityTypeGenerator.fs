@@ -31,18 +31,14 @@ type internal AttributeWriter(name: string) =
             sprintf "[<%s(%s)>]" name (String.Join(", ", parameters))
 
 type FSharpEntityTypeGenerator
-    (
-        annotationCodeGenerator: IAnnotationCodeGenerator,
-        code: ICSharpHelper,
-        config: ScaffoldOptions
-    ) =
+    (annotationCodeGenerator: IAnnotationCodeGenerator, code: ICSharpHelper, config: ScaffoldOptions) =
     let createAttributeQuick = AttributeWriter >> string
 
     let primitiveTypeNames =
         seq {
             yield (typedefof<bool>, "bool")
             yield (typedefof<byte>, "byte")
-            yield (typedefof<byte []>, "byte[]")
+            yield (typedefof<byte[]>, "byte[]")
             yield (typedefof<sbyte>, "sbyte")
             yield (typedefof<int>, "int")
             yield (typedefof<char>, "char")
@@ -66,8 +62,7 @@ type FSharpEntityTypeGenerator
     let rec getTypeName scaffoldNullableColumnsAs (t: Type) =
 
         if t.IsArray then
-            (getTypeName scaffoldNullableColumnsAs (t.GetElementType()))
-            + "[]"
+            (getTypeName scaffoldNullableColumnsAs (t.GetElementType())) + "[]"
 
         else if t.GetTypeInfo().IsGenericType then
             if t.GetGenericTypeDefinition() = typedefof<Nullable<_>> then
@@ -89,10 +84,7 @@ type FSharpEntityTypeGenerator
                         |> Seq.map (fun t' -> getTypeName scaffoldNullableColumnsAs t')
                     )
 
-                genericTypeDefName
-                + "<"
-                + genericTypeArguments
-                + ">"
+                genericTypeDefName + "<" + genericTypeArguments + ">"
 
         else
             match primitiveTypeNames.TryGetValue t with
@@ -109,11 +101,12 @@ type FSharpEntityTypeGenerator
                 && (typeInfo.GetGenericTypeDefinition() = typedefof<Nullable<_>>
                     || typeInfo.GetGenericTypeDefinition() = typedefof<Option<_>>))
 
-        if (not p.IsNullable)
-           && (p.ClrType |> isNullableOrOptionType)
-           && (p.IsPrimaryKey() |> not) then
-            (nameof RequiredAttribute |> createAttributeQuick)
-            |> Some
+        if
+            (not p.IsNullable)
+            && (p.ClrType |> isNullableOrOptionType)
+            && (p.IsPrimaryKey() |> not)
+        then
+            (nameof RequiredAttribute |> createAttributeQuick) |> Some
         else
             None
 
@@ -133,8 +126,7 @@ type FSharpEntityTypeGenerator
             else
                 Option.None
 
-        if delimitedColumnName.IsSome
-           || delimitedColumnType.IsSome then
+        if delimitedColumnName.IsSome || delimitedColumnType.IsSome then
             let a = "ColumnAttribute" |> AttributeWriter
 
             match delimitedColumnName with
@@ -171,15 +163,13 @@ type FSharpEntityTypeGenerator
 
     let generateKeyAttribute (property: IProperty) =
         if notNull (property.FindContainingPrimaryKey()) then
-            (nameof KeyAttribute |> createAttributeQuick)
-            |> Some
+            (nameof KeyAttribute |> createAttributeQuick) |> Some
         else
             None
 
     let generateKeylessAttribute (entityType: IEntityType) =
         if isNull (entityType.FindPrimaryKey()) then
-            (nameof KeylessAttribute |> createAttributeQuick)
-            |> Some
+            (nameof KeylessAttribute |> createAttributeQuick) |> Some
         else
             None
 
@@ -189,16 +179,14 @@ type FSharpEntityTypeGenerator
         let schema = entityType.GetSchema()
         let defaultSchema = entityType.Model.GetDefaultSchema()
 
-        let schemaParameterNeeded =
-            notNull schema && schema <> defaultSchema
+        let schemaParameterNeeded = notNull schema && schema <> defaultSchema
 
         let isView = notNull (entityType.GetViewName())
 
         let tableAttributeNeeded =
             (not isView)
             && (schemaParameterNeeded
-                || notNull tableName
-                   && tableName <> entityType.GetDbSetName())
+                || notNull tableName && tableName <> entityType.GetDbSetName())
 
         if tableAttributeNeeded then
             let tableAttribute = AttributeWriter(nameof TableAttribute)
@@ -216,56 +204,47 @@ type FSharpEntityTypeGenerator
 
         let indexes =
             entityType.GetIndexes()
-            |> Seq.filter
-                (fun i ->
-                    ConfigurationSource.Convention
-                    <> ((i :?> IConventionIndex).GetConfigurationSource()))
+            |> Seq.filter (fun i ->
+                ConfigurationSource.Convention
+                <> ((i :?> IConventionIndex).GetConfigurationSource()))
 
         let attributes =
             indexes
-            |> Seq.map
-                (fun index ->
-                    let annotations =
-                        annotationCodeGenerator.FilterIgnoredAnnotations(index.GetAnnotations())
-                        |> annotationsToDictionary
+            |> Seq.map (fun index ->
+                let annotations =
+                    annotationCodeGenerator.FilterIgnoredAnnotations(index.GetAnnotations())
+                    |> annotationsToDictionary
 
-                    annotationCodeGenerator.RemoveAnnotationsHandledByConventions(index, annotations)
+                annotationCodeGenerator.RemoveAnnotationsHandledByConventions(index, annotations)
 
-                    if annotations.Count = 0 then
-                        let indexAttribute = AttributeWriter(nameof IndexAttribute)
+                if annotations.Count = 0 then
+                    let indexAttribute = AttributeWriter(nameof IndexAttribute)
 
-                        index.Properties
-                        |> Seq.iter (fun p -> indexAttribute.AddParameter $"nameof({p.Name})")
+                    index.Properties
+                    |> Seq.iter (fun p -> indexAttribute.AddParameter $"nameof({p.Name})")
 
-                        if notNull index.Name then
-                            indexAttribute.AddParameter $"Name = {code.Literal(index.Name)}"
+                    if notNull index.Name then
+                        indexAttribute.AddParameter $"Name = {code.Literal(index.Name)}"
 
-                        if index.IsUnique then
-                            indexAttribute.AddParameter $"IsUnique = {code.Literal(index.IsUnique)}"
+                    if index.IsUnique then
+                        indexAttribute.AddParameter $"IsUnique = {code.Literal(index.IsUnique)}"
 
-                        string indexAttribute |> Some
+                    string indexAttribute |> Some
 
-                    else
-                        None)
+                else
+                    None)
 
         let output = stringBuilder { attributes }
 
-        if output.Length > 0 then
-            Some output
-        else
-            None
+        if output.Length > 0 then Some output else None
 
     let generateForeignKeyAttribute (navigation: INavigation) =
 
-        if navigation.IsOnDependent
-           && navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
-            let foreignKeyAttribute =
-                AttributeWriter(nameof ForeignKeyAttribute)
+        if navigation.IsOnDependent && navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
+            let foreignKeyAttribute = AttributeWriter(nameof ForeignKeyAttribute)
 
             if navigation.ForeignKey.Properties.Count > 1 then
-                let names =
-                    navigation.ForeignKey.Properties
-                    |> Seq.map (fun fk -> fk.Name)
+                let names = navigation.ForeignKey.Properties |> Seq.map (fun fk -> fk.Name)
 
                 let param = String.Join(",", names)
                 foreignKeyAttribute.AddParameter(code.Literal param)
@@ -278,12 +257,10 @@ type FSharpEntityTypeGenerator
 
     let generateInversePropertyAttribute (navigation: INavigation) =
 
-        if navigation.ForeignKey.PrincipalKey.IsPrimaryKey()
-           && notNull navigation.Inverse then
+        if navigation.ForeignKey.PrincipalKey.IsPrimaryKey() && notNull navigation.Inverse then
             let inverseNavigation = navigation.Inverse
 
-            let inversePropertyAttribute =
-                AttributeWriter(nameof InversePropertyAttribute)
+            let inversePropertyAttribute = AttributeWriter(nameof InversePropertyAttribute)
 
             let nameMatches =
                 navigation.DeclaringEntityType.GetMembers()
@@ -309,17 +286,13 @@ type FSharpEntityTypeGenerator
                 generateIndexAttributes entityType
             }
 
-        if annotations.Length > 0 then
-            Some annotations
-        else
-            None
+        if annotations.Length > 0 then Some annotations else None
 
 
     let generateConstructor (entityType: IEntityType) =
 
         let collectionNavigations =
-            entityType.GetNavigations()
-            |> Seq.filter (fun n -> n.IsCollection)
+            entityType.GetNavigations() |> Seq.filter (fun n -> n.IsCollection)
 
         if collectionNavigations |> Seq.isEmpty then
             None
@@ -361,10 +334,7 @@ type FSharpEntityTypeGenerator
                     string a
             }
 
-        if annotations.Length > 0 then
-            Some annotations
-        else
-            None
+        if annotations.Length > 0 then Some annotations else None
 
     let generateNavigationDataAnnotations (navigation: INavigation) =
 
@@ -388,8 +358,7 @@ type FSharpEntityTypeGenerator
                     else
                         None
 
-                let typeName =
-                    getTypeName scaffoldNullableColumnsAs p.ClrType
+                let typeName = getTypeName scaffoldNullableColumnsAs p.ClrType
 
                 writeProperty p.Name typeName annotationText
         }
@@ -397,13 +366,10 @@ type FSharpEntityTypeGenerator
     let generateSkipForeignKeyAttribute (navigation: ISkipNavigation) =
 
         if navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
-            let foreignKeyAttribute =
-                AttributeWriter(nameof ForeignKeyAttribute)
+            let foreignKeyAttribute = AttributeWriter(nameof ForeignKeyAttribute)
 
             let props =
-                navigation.ForeignKey.Properties
-                |> Seq.map (fun p -> p.Name)
-                |> join ","
+                navigation.ForeignKey.Properties |> Seq.map (fun p -> p.Name) |> join ","
 
             foreignKeyAttribute.AddParameter(code.Literal props)
             (string foreignKeyAttribute) |> Some
@@ -416,8 +382,7 @@ type FSharpEntityTypeGenerator
             let inverseNavigation = navigation.Inverse
 
             if notNull inverseNavigation then
-                let inversePropertyAttribute =
-                    AttributeWriter(nameof InversePropertyAttribute)
+                let inversePropertyAttribute = AttributeWriter(nameof InversePropertyAttribute)
 
                 let condition =
                     navigation.DeclaringEntityType.GetMembers()
@@ -528,8 +493,7 @@ type FSharpEntityTypeGenerator
             if useDataAnnotations then
                 generatePropertyDataAnnotations p
 
-            let typeName =
-                getTypeName scaffoldNullableColumnsAs p.ClrType
+            let typeName = getTypeName scaffoldNullableColumnsAs p.ClrType
 
             $"{p.Name}: {typeName}"
         }
@@ -608,16 +572,16 @@ type FSharpEntityTypeGenerator
         generate entityType useDataAnnotation scaffoldNullableColumnsAs
 
     member this.WriteCode(entityType, ``namespace``, useDataAnnotations, useNullableReferenceTypes) =
-            let scaffoldTypesAs =
-                if notNull config then
-                    config.ScaffoldTypesAs
-                else
-                    RecordType
+        let scaffoldTypesAs =
+            if notNull config then
+                config.ScaffoldTypesAs
+            else
+                RecordType
 
-            let scaffoldNullableColumnsAs =
-                if notNull config then
-                    config.ScaffoldNullableColumnsAs
-                else
-                    OptionTypes
+        let scaffoldNullableColumnsAs =
+            if notNull config then
+                config.ScaffoldNullableColumnsAs
+            else
+                OptionTypes
 
-            writeCode entityType useDataAnnotations scaffoldTypesAs scaffoldNullableColumnsAs
+        writeCode entityType useDataAnnotations scaffoldTypesAs scaffoldNullableColumnsAs
