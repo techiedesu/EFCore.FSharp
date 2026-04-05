@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adapted to EF Core 10 breaking changes (removed/renamed APIs, new interface members, constructor changes)
 - Updated CI workflow to .NET 10 with latest GitHub Actions
 - Added C# interop project for TestRelationalTypeMappingSource (F# cannot handle covariant return types)
+- Updated devcontainer to Debian bookworm and .NET 10
+- Relaxed FSharp.Core dependency constraint (>= 9.0.100 instead of exact)
+- Replaced deprecated PackageLicenseUrl with PackageLicenseExpression (MIT)
+- Updated documentation (README, Getting Started, docsSrc) for .NET 10
 
 ## [6.0.7] - 2022-06-26
 
