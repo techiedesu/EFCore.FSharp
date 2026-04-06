@@ -63,15 +63,19 @@ type BuildSource =
     member this.BuildInMemory(references: string array) =
         let projectName = "TestProject"
 
-        let source = String.Join(Environment.NewLine, this.Sources)
+        let source =
+            String.Join(Environment.NewLine, this.Sources)
 
-        let tmpDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+        let tmpDir =
+            Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+
         Directory.CreateDirectory(tmpDir) |> ignore
 
         let sourceFile = Path.Combine(tmpDir, "source.fs")
         File.WriteAllText(sourceFile, source)
 
-        let outputDll = Path.Combine(tmpDir, projectName + ".dll")
+        let outputDll =
+            Path.Combine(tmpDir, projectName + ".dll")
 
         let args =
             [| yield "fsc.exe"
@@ -86,7 +90,9 @@ type BuildSource =
             lock compilerLock (fun () -> checker.Compile(args) |> Async.RunSynchronously)
 
         if exitCode <> 0 then
-            let messages = errors |> Seq.map (fun e -> e.Message + Environment.NewLine)
+            let messages =
+                errors
+                |> Seq.map (fun e -> e.Message + Environment.NewLine)
 
             invalidOp (String.Join(Environment.NewLine, messages))
 
@@ -96,7 +102,7 @@ type BuildSource =
         // Clean up temp files
         try
             Directory.Delete(tmpDir, true)
-        with _ ->
-            ()
+        with
+        | _ -> ()
 
         assembly

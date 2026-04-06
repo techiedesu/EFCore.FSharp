@@ -35,20 +35,28 @@ module internal rec SharedTypeExtensions =
             match builtInTypeNames.TryGetValue t with
             | (true, builtInName) -> sb.Append(builtInName)
             | _ ->
-                let name = if useFullName then t.FullName else t.Name
+                let name =
+                    if useFullName then
+                        t.FullName
+                    else
+                        t.Name
 
                 sb.Append(name)
 
     let rec processGenericType t genericArguments length useFullName (compilable: bool) (sb: StringBuilder) =
 
-        if t.IsConstructedGenericType && t.GetGenericTypeDefinition() = typeof<Nullable<_>> then
+        if t.IsConstructedGenericType
+           && t.GetGenericTypeDefinition() = typeof<Nullable<_>> then
             sb.Append("Nullable<") |> ignore
 
-            processType (unwrapNullableType t) useFullName compilable sb |> ignore
+            processType (unwrapNullableType t) useFullName compilable sb
+            |> ignore
 
             sb.Append(">")
-        elif t.IsConstructedGenericType && t.GetGenericTypeDefinition() = typeof<Option<_>> then
-            processType (unwrapNullableType t) useFullName compilable sb |> ignore
+        elif t.IsConstructedGenericType
+             && t.GetGenericTypeDefinition() = typeof<Option<_>> then
+            processType (unwrapNullableType t) useFullName compilable sb
+            |> ignore
 
             sb.Append(" option")
         else
@@ -61,7 +69,8 @@ module internal rec SharedTypeExtensions =
 
             if compilable then
                 if t.IsNested then
-                    processType t.DeclaringType useFullName compilable sb |> ignore
+                    processType t.DeclaringType useFullName compilable sb
+                    |> ignore
 
                     sb.Append('.') |> ignore
                 else
@@ -81,10 +90,12 @@ module internal rec SharedTypeExtensions =
             if genericPartIndex <= 0 then
                 sb.Append(t.Name)
             else
-                sb.Append(t.Name, 0, genericPartIndex).Append("<") |> ignore
+                sb.Append(t.Name, 0, genericPartIndex).Append("<")
+                |> ignore
 
                 for i = offset to (length - 1) do
-                    processType genericArguments.[i] useFullName compilable sb |> ignore
+                    processType genericArguments.[i] useFullName compilable sb
+                    |> ignore
 
                     if (i + 1) <> length then
                         sb.Append(',') |> ignore
@@ -100,10 +111,15 @@ module internal rec SharedTypeExtensions =
         while (innerType.IsArray) do
             innerType <- innerType.GetElementType()
 
-        processType innerType useFullName compilable sb |> ignore
+        processType innerType useFullName compilable sb
+        |> ignore
 
         while (innerType.IsArray) do
-            sb.Append('[').Append(',', innerType.GetArrayRank() - 1).Append(']') |> ignore
+            sb
+                .Append('[')
+                .Append(',', innerType.GetArrayRank() - 1)
+                .Append(']')
+            |> ignore
 
             innerType <- innerType.GetElementType()
 
@@ -135,16 +151,22 @@ module internal rec SharedTypeExtensions =
         && typeInfo.GetGenericTypeDefinition() = typedefof<Option<_>>
 
     let unwrapNullableType (t: Type) =
-        if isNullableType t then Nullable.GetUnderlyingType t else t
+        if isNullableType t then
+            Nullable.GetUnderlyingType t
+        else
+            t
 
     let unwrapOptionType (t: Type) =
-        if isOptionType t then t.GenericTypeArguments.[0] else t
+        if isOptionType t then
+            t.GenericTypeArguments.[0]
+        else
+            t
 
     let makeNullable (nullable: bool) (t: Type) =
         if isNullableType t = nullable then
             t
         else if nullable && t.IsValueType then
-            typedefof<Nullable<_>>.MakeGenericType(t)
+            typedefof<Nullable<_>>.MakeGenericType (t)
         else
             unwrapNullableType t
 
@@ -152,19 +174,24 @@ module internal rec SharedTypeExtensions =
         if isOptionType t = optional then
             t
         else if optional then
-            typedefof<Option<_>>.MakeGenericType(t)
+            typedefof<Option<_>>.MakeGenericType (t)
         else
             unwrapOptionType t
 
     let unwrapEnumType (t: Type) =
         let isNullable = isNullableType t
 
-        let underlyingNonNullableType = if isNullable then unwrapNullableType t else t
+        let underlyingNonNullableType =
+            if isNullable then
+                unwrapNullableType t
+            else
+                t
 
         if not (underlyingNonNullableType.GetTypeInfo()).IsEnum then
             t
         else
-            let underlyingEnumType = Enum.GetUnderlyingType(underlyingNonNullableType)
+            let underlyingEnumType =
+                Enum.GetUnderlyingType(underlyingNonNullableType)
 
             if isNullable then
                 makeNullable true underlyingEnumType
@@ -172,7 +199,8 @@ module internal rec SharedTypeExtensions =
                 underlyingEnumType
 
     let isInteger (t: Type) =
-        let t' = t |> unwrapNullableType |> unwrapOptionType
+        let t' =
+            t |> unwrapNullableType |> unwrapOptionType
 
         t' = typeof<int>
         || t' = typeof<int64>
@@ -185,7 +213,8 @@ module internal rec SharedTypeExtensions =
         || t' = typeof<char>
 
     let isNumeric (t: Type) =
-        let t' = t |> unwrapNullableType |> unwrapOptionType
+        let t' =
+            t |> unwrapNullableType |> unwrapOptionType
 
         (isInteger t')
         || t' = typeof<decimal>
@@ -193,7 +222,8 @@ module internal rec SharedTypeExtensions =
         || t' = typeof<float32>
 
     let isSignedInteger (t: Type) =
-        let t' = t |> unwrapNullableType |> unwrapOptionType
+        let t' =
+            t |> unwrapNullableType |> unwrapOptionType
 
         t' = typeof<int>
         || t' = typeof<int64>
@@ -206,16 +236,21 @@ module internal rec SharedTypeExtensions =
         sb.ToString()
 
     let isSingleCaseUnion t =
-        FSharpType.IsUnion t && FSharpType.GetUnionCases(t) |> Array.length |> ((=) 1)
+        FSharpType.IsUnion t
+        && FSharpType.GetUnionCases(t)
+           |> Array.length
+           |> ((=) 1)
 
     let unwrapSingleCaseUnion t =
-        let case = FSharpType.GetUnionCases(t) |> Array.exactlyOne
+        let case =
+            FSharpType.GetUnionCases(t) |> Array.exactlyOne
 
         let field = case.GetFields() |> Array.head
         field.PropertyType
 
-    let getRequiredRuntimeMethod (t: Type, name: string, parameters: Type[]) =
-        let result = t.GetTypeInfo().GetRuntimeMethod(name, parameters)
+    let getRequiredRuntimeMethod (t: Type, name: string, parameters: Type []) =
+        let result =
+            t.GetTypeInfo().GetRuntimeMethod(name, parameters)
 
         if isNull result then
             invalidOp $"Could not find method '{name}' on type '{t}'"

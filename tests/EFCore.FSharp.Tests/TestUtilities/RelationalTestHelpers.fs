@@ -19,9 +19,14 @@ type RelationalTestHelpers private () =
 
     override this.UseProviderOptions optionsBuilder =
 
-        let e = optionsBuilder.Options.FindExtension<FakeRelationalOptionsExtension>()
+        let e =
+            optionsBuilder.Options.FindExtension<FakeRelationalOptionsExtension>()
 
-        let extension = if isNull e then FakeRelationalOptionsExtension() else e
+        let extension =
+            if isNull e then
+                FakeRelationalOptionsExtension()
+            else
+                e
 
         let fakeConn = new FakeDbConnection("Database=Fake")
 

@@ -34,7 +34,11 @@ open Microsoft.EntityFrameworkCore.Design.Internal
 open EntityFrameworkCore.FSharp
 
 type TestFSharpSnapshotGenerator
-    (dependencies, mappingSource: IRelationalTypeMappingSource, annotationCodeGenerator: IAnnotationCodeGenerator) =
+    (
+        dependencies,
+        mappingSource: IRelationalTypeMappingSource,
+        annotationCodeGenerator: IAnnotationCodeGenerator
+    ) =
     inherit FSharpSnapshotGenerator(dependencies, mappingSource, annotationCodeGenerator)
 
     member this.TestGenerateEntityTypeAnnotations builderName entityType =
@@ -59,7 +63,9 @@ type private RawEnum =
     | A = 0
     | B = 1
 
-type MyContext() = class end
+type MyContext() =
+    class
+    end
 
 module FSharpMigrationsGeneratorTest =
 
@@ -97,7 +103,8 @@ module FSharpMigrationsGeneratorTest =
               "System.Threading.Thread.dll"
               "System.Threading.ThreadPool.dll" ]
 
-        let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+        let thisAssembly =
+            System.Reflection.Assembly.GetExecutingAssembly()
 
         let localNames =
             [ "FSharp.Core.dll"
@@ -115,7 +122,8 @@ module FSharpMigrationsGeneratorTest =
         let runtimeDir =
             System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
-        let runtimeRefs = runtimeNames |> List.map (fun r -> runtimeDir + r)
+        let runtimeRefs =
+            runtimeNames |> List.map (fun r -> runtimeDir + r)
 
         let localRefs =
             let location =
@@ -147,7 +155,8 @@ module FSharpMigrationsGeneratorTest =
             Expect.equal contextTypeAttribute.ContextType.FullName typeof<MyContext>.FullName "Should be equal"
 
             Activator.CreateInstance(snapshotType) :?> ModelSnapshot
-        with exn ->
+        with
+        | exn ->
             let msg =
                 sprintf "Could not build the following code {%s}:\n {%s}" modelSnapshotTypeName modelSnapshotCode
 
@@ -197,17 +206,18 @@ module FSharpMigrationsGeneratorTest =
             TestFSharpSnapshotGenerator(codeHelper, sqlServerTypeMappingSource, annotationCodeGenerator)
 
         let coreAnnotations =
-            typeof<CoreAnnotationNames>.GetFields()
+            typeof<CoreAnnotationNames>.GetFields ()
             |> Seq.filter (fun f -> f.FieldType = typeof<string>)
             |> Seq.toList
 
         coreAnnotations
-        |> List.iter (fun field ->
-            let annotationName = field.GetValue(null) |> string
+        |> List.iter
+            (fun field ->
+                let annotationName = field.GetValue(null) |> string
 
-            Expect.isTrue
-                (CoreAnnotationNames.AllNames.Contains(annotationName))
-                $"CoreAnnotations.AllNames doesn't contain {annotationName}")
+                Expect.isTrue
+                    (CoreAnnotationNames.AllNames.Contains(annotationName))
+                    $"CoreAnnotations.AllNames doesn't contain {annotationName}")
 
         let rlNames =
             (typeof<RelationalAnnotationNames>).GetFields()
@@ -215,47 +225,55 @@ module FSharpMigrationsGeneratorTest =
             |> Seq.toList
 
         let allAnnotations =
-            (coreAnnotations @ rlNames) |> Seq.filter (fun f -> f.Name <> "Prefix")
+            (coreAnnotations @ rlNames)
+            |> Seq.filter (fun f -> f.Name <> "Prefix")
 
         allAnnotations
-        |> Seq.iter (fun f ->
-            let annotationName = f.GetValue(null) |> string
+        |> Seq.iter
+            (fun f ->
+                let annotationName = f.GetValue(null) |> string
 
-            if not (invalidAnnotations.Contains(annotationName)) then
-                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                if not (invalidAnnotations.Contains(annotationName)) then
+                    let modelBuilder =
+                        RelationalTestHelpers.Instance.CreateConventionBuilder()
 
-                let metadataItem = createMetadataItem modelBuilder
+                    let metadataItem = createMetadataItem modelBuilder
 
-                let annotation =
-                    if validAnnotations.ContainsKey(annotationName) then
-                        fst validAnnotations.[annotationName]
-                    else
-                        null
-
-                metadataItem.SetAnnotation(annotationName, annotation)
-
-                modelBuilder.FinalizeModel(designTime = true, skipValidation = true) |> ignore
-
-                try
-                    let actual = test generator metadataItem
-
-                    let expected =
+                    let annotation =
                         if validAnnotations.ContainsKey(annotationName) then
-                            snd validAnnotations.[annotationName]
+                            fst validAnnotations.[annotationName]
                         else
-                            generationDefault
+                            null
 
-                    Expect.equal (actual.Trim()) (expected.Trim()) $"Should be equal, but failed on {annotationName}"
-                with exn ->
-                    let msg =
-                        sprintf
-                            "Annotation '%s' was not handled by the code generator: {%s}"
-                            annotationName
-                            exn.Message
+                    metadataItem.SetAnnotation(annotationName, annotation)
 
-                    Expect.isTrue false msg
+                    modelBuilder.FinalizeModel(designTime = true, skipValidation = true)
+                    |> ignore
 
-        )
+                    try
+                        let actual = test generator metadataItem
+
+                        let expected =
+                            if validAnnotations.ContainsKey(annotationName) then
+                                snd validAnnotations.[annotationName]
+                            else
+                                generationDefault
+
+                        Expect.equal
+                            (actual.Trim())
+                            (expected.Trim())
+                            $"Should be equal, but failed on {annotationName}"
+                    with
+                    | exn ->
+                        let msg =
+                            sprintf
+                                "Annotation '%s' was not handled by the code generator: {%s}"
+                                annotationName
+                                exn.Message
+
+                        Expect.isTrue false msg
+
+                )
 
         ()
 
@@ -274,7 +292,7 @@ module FSharpMigrationsGeneratorTest =
     type EntityWithEveryPrimitive =
         { Boolean: bool
           Byte: byte
-          ByteArray: byte[]
+          ByteArray: byte []
           Char: char
           DateTime: DateTime
           DateTimeOffset: DateTimeOffset
@@ -422,16 +440,23 @@ module FSharpMigrationsGeneratorTest =
                       |> HashSet
 
                   let _toTable =
-                      _nl + @"entityTypeBuilder.ToTable(""WithAnnotations"") |> ignore" + _nl
+                      _nl
+                      + @"entityTypeBuilder.ToTable(""WithAnnotations"") |> ignore"
+                      + _nl
 
                   let forEntityType =
                       [ (RelationalAnnotationNames.TableName,
-                         (box "MyTable", _nl + @"entityTypeBuilder.ToTable(""MyTable"") |> ignore"))
+                         (box "MyTable",
+                          _nl
+                          + @"entityTypeBuilder.ToTable(""MyTable"") |> ignore"))
                         (RelationalAnnotationNames.Schema,
                          (box "MySchema",
-                          _nl + @"entityTypeBuilder.ToTable(""WithAnnotations"", ""MySchema"") |> ignore"))
+                          _nl
+                          + @"entityTypeBuilder.ToTable(""WithAnnotations"", ""MySchema"") |> ignore"))
                         (CoreAnnotationNames.DiscriminatorProperty,
-                         (box "Id", _toTable + @"entityTypeBuilder.HasDiscriminator<int>(""Id"") |> ignore"))
+                         (box "Id",
+                          _toTable
+                          + @"entityTypeBuilder.HasDiscriminator<int>(""Id"") |> ignore"))
                         (CoreAnnotationNames.DiscriminatorValue,
                          (box "MyDiscriminatorValue",
                           _toTable
@@ -441,11 +466,17 @@ module FSharpMigrationsGeneratorTest =
                           _toTable
                           + @"entityTypeBuilder.HasAnnotation(""Relational:Comment"", ""My Comment"") |> ignore"))
                         (RelationalAnnotationNames.ViewName,
-                         (box "MyView", _nl + @"entityTypeBuilder.ToView(""MyView"") |> ignore"))
+                         (box "MyView",
+                          _nl
+                          + @"entityTypeBuilder.ToView(""MyView"") |> ignore"))
                         (RelationalAnnotationNames.FunctionName,
-                         (box null, _nl + "entityTypeBuilder.ToFunction(null) |> ignore"))
+                         (box null,
+                          _nl
+                          + "entityTypeBuilder.ToFunction(null) |> ignore"))
                         (RelationalAnnotationNames.SqlQuery,
-                         (box null, _nl + "entityTypeBuilder.ToSqlQuery(null) |> ignore")) ]
+                         (box null,
+                          _nl
+                          + "entityTypeBuilder.ToSqlQuery(null) |> ignore")) ]
                       |> dict
 
                   missingAnnotationCheck
@@ -538,7 +569,8 @@ module FSharpMigrationsGeneratorTest =
                         RelationalAnnotationNames.StoreType ]
                       |> HashSet
 
-                  let columnMapping = $"{_nl}.HasColumnType(\"default_int_mapping\")"
+                  let columnMapping =
+                      $"{_nl}.HasColumnType(\"default_int_mapping\")"
 
                   let columnMappingWithDefaultValue = $"{columnMapping}"
 
@@ -552,12 +584,15 @@ module FSharpMigrationsGeneratorTest =
                          (box false, $"{_nl}.IsUnicode(false){columnMappingWithDefaultValue}{_nl}|> ignore"))
                         (CoreAnnotationNames.ValueConverter,
                          (box (ValueConverter<int, int64>((fun v -> v |> int64), (fun v -> v |> int), null)),
-                          _nl + $".HasColumnType(\"default_long_mapping\"){_nl}|> ignore"))
+                          _nl
+                          + $".HasColumnType(\"default_long_mapping\"){_nl}|> ignore"))
                         (CoreAnnotationNames.ProviderClrType,
                          (box typeof<int64>, $"{_nl}.HasColumnType(\"default_long_mapping\"){_nl}|> ignore"))
                         (RelationalAnnotationNames.ColumnName,
                          (box "MyColumn",
-                          columnMappingWithDefaultValue + _nl + $".HasColumnName(\"MyColumn\") |> ignore"))
+                          columnMappingWithDefaultValue
+                          + _nl
+                          + $".HasColumnName(\"MyColumn\") |> ignore"))
                         (RelationalAnnotationNames.ColumnType,
                          (box "int", _nl + $".HasColumnType(\"int\"){_nl}|> ignore"))
                         (RelationalAnnotationNames.DefaultValueSql,
@@ -571,14 +606,23 @@ module FSharpMigrationsGeneratorTest =
                           + _nl
                           + ".HasComputedColumnSql(\"some SQL\") |> ignore"))
                         (RelationalAnnotationNames.DefaultValue,
-                         (box "1", columnMapping + ".HasDefaultValue(\"1\") |> ignore"))
+                         (box "1",
+                          columnMapping
+                          + ".HasDefaultValue(\"1\") |> ignore"))
                         (RelationalAnnotationNames.DefaultValue,
-                         (box 0, columnMapping + $"{_nl}.HasDefaultValue(0){_nl}|> ignore"))
+                         (box 0,
+                          columnMapping
+                          + $"{_nl}.HasDefaultValue(0){_nl}|> ignore"))
                         (RelationalAnnotationNames.IsFixedLength,
-                         (box true, columnMappingWithDefaultValue + _nl + ".IsFixedLength() |> ignore"))
+                         (box true,
+                          columnMappingWithDefaultValue
+                          + _nl
+                          + ".IsFixedLength() |> ignore"))
                         (RelationalAnnotationNames.Comment,
                          (box "My Comment",
-                          columnMappingWithDefaultValue + _nl + ".HasComment(\"My Comment\") |> ignore"))
+                          columnMappingWithDefaultValue
+                          + _nl
+                          + ".HasComment(\"My Comment\") |> ignore"))
                         (RelationalAnnotationNames.Collation,
                          (box "Some Collation",
                           $"{columnMappingWithDefaultValue}{_nl}.UseCollation(\"Some Collation\") |> ignore"))
@@ -588,7 +632,12 @@ module FSharpMigrationsGeneratorTest =
                       |> dict
 
                   missingAnnotationCheck
-                      (fun b -> (b.Entity<WithAnnotations>().Property(fun e -> e.Id).Metadata :> IMutableAnnotatable))
+                      (fun b ->
+                          (b
+                              .Entity<WithAnnotations>()
+                              .Property(fun e -> e.Id)
+                              .Metadata
+                          :> IMutableAnnotatable))
                       notForProperty
                       forProperty
                       (columnMappingWithDefaultValue + $"{_nl}|> ignore")
@@ -626,36 +675,47 @@ module FSharpMigrationsGeneratorTest =
                           )
                       )
 
-                  let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                  let modelBuilder =
+                      RelationalTestHelpers.Instance.CreateConventionBuilder()
 
                   modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion)
                   |> ignore
 
-                  modelBuilder.Entity<WithAnnotations>(fun eb ->
-                      eb
-                          .HasDiscriminator<RawEnum>("EnumDiscriminator")
-                          .HasValue(RawEnum.A)
-                          .HasValue<Derived>(RawEnum.B)
-                      |> ignore
+                  modelBuilder.Entity<WithAnnotations>
+                      (fun eb ->
+                          eb
+                              .HasDiscriminator<RawEnum>("EnumDiscriminator")
+                              .HasValue(RawEnum.A)
+                              .HasValue<Derived>(RawEnum.B)
+                          |> ignore
 
-                      eb.Property<RawEnum>("EnumDiscriminator").HasConversion<int>() |> ignore)
+                          eb
+                              .Property<RawEnum>("EnumDiscriminator")
+                              .HasConversion<int>()
+                          |> ignore)
                   |> ignore
 
-                  let model = modelBuilder.FinalizeModel(designTime = true)
+                  let model =
+                      modelBuilder.FinalizeModel(designTime = true)
 
                   let modelSnapshotCode =
                       generator.GenerateSnapshot("MyNamespace", typeof<MyContext>, "MySnapshot", model)
 
                   let snapshotModel =
-                      (compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot").Model
+                      (compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot")
+                          .Model
 
                   Expect.equal
-                      (snapshotModel.FindEntityType(typeof<WithAnnotations>).GetDiscriminatorValue())
+                      (snapshotModel
+                          .FindEntityType(typeof<WithAnnotations>)
+                          .GetDiscriminatorValue())
                       ((int RawEnum.A) :> obj)
                       "Should be equal"
 
                   Expect.equal
-                      (snapshotModel.FindEntityType(typeof<Derived>).GetDiscriminatorValue())
+                      (snapshotModel
+                          .FindEntityType(typeof<Derived>)
+                          .GetDiscriminatorValue())
                       ((int RawEnum.B) :> obj)
                       "Should be equal"
               }
@@ -679,7 +739,7 @@ module FSharpMigrationsGeneratorTest =
                             )
                             AddColumnOperation(Name = "C3", Table = "T1", ClrType = typeof<PropertyEntry>)
 
-                            let insertValues: obj[,] = Array2D.create 2 3 (1 :> obj)
+                            let insertValues: obj [,] = Array2D.create 2 3 (1 :> obj)
                             insertValues.[0, 1] <- null
 
                             InsertDataOperation(Table = "T1", Columns = [| "Id"; "C2"; "C3" |], Values = insertValues) ],
@@ -713,9 +773,11 @@ module FSharpMigrationsGeneratorTest =
                   )
                   |> ignore
 
-                  modelBuilder.HasAnnotation(CoreAnnotationNames.ProductVersion, null) |> ignore
+                  modelBuilder.HasAnnotation(CoreAnnotationNames.ProductVersion, null)
+                  |> ignore
 
-                  let model = modelBuilder.FinalizeModel(designTime = true)
+                  let model =
+                      modelBuilder.FinalizeModel(designTime = true)
 
 
                   let migrationMetadataCode =
@@ -827,14 +889,17 @@ module FSharpMigrationsGeneratorTest =
                           .GetType("MyNamespace.MyMigration", true, false)
 
                   let attribute =
-                      (migrationType :> System.Reflection.MemberInfo).GetCustomAttributes(false)
-                      |> Seq.choose (fun (t: obj) ->
-                          match t with
-                          | :? DbContextAttribute as a -> Some a
-                          | _ -> None)
+                      (migrationType :> System.Reflection.MemberInfo)
+                          .GetCustomAttributes(false)
+                      |> Seq.choose
+                          (fun (t: obj) ->
+                              match t with
+                              | :? DbContextAttribute as a -> Some a
+                              | _ -> None)
                       |> Seq.head
 
-                  let migration = Activator.CreateInstance(migrationType) :?> Migration
+                  let migration =
+                      Activator.CreateInstance(migrationType) :?> Migration
 
                   Expect.equal
                       (attribute.ContextType.FullName)
@@ -849,18 +914,20 @@ module FSharpMigrationsGeneratorTest =
               test "Snapshots compile" {
                   let generator = createMigrationsCodeGenerator ()
 
-                  let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                  let modelBuilder =
+                      RelationalTestHelpers.Instance.CreateConventionBuilder()
 
                   modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion)
                   |> ignore
 
-                  modelBuilder.Entity<EntityWithConstructorBinding>(fun x ->
-                      x.Property(fun e -> e.Id) |> ignore
+                  modelBuilder.Entity<EntityWithConstructorBinding>
+                      (fun x ->
+                          x.Property(fun e -> e.Id) |> ignore
 
-                      x
-                          .Property<Guid>("PropertyWithValueGenerator")
-                          .HasValueGenerator<GuidValueGenerator>()
-                      |> ignore)
+                          x
+                              .Property<Guid>("PropertyWithValueGenerator")
+                              .HasValueGenerator<GuidValueGenerator>()
+                          |> ignore)
                   |> ignore
 
                   modelBuilder.HasDbFunction(myDbFunction) |> ignore
@@ -870,7 +937,8 @@ module FSharpMigrationsGeneratorTest =
 
                   let entityType = model.AddEntityType("Cheese")
 
-                  let property1 = entityType.AddProperty("Pickle", typeof<StringBuilder>)
+                  let property1 =
+                      entityType.AddProperty("Pickle", typeof<StringBuilder>)
 
                   property1.SetValueConverter(
                       ValueConverter<StringBuilder, string>(
@@ -880,7 +948,8 @@ module FSharpMigrationsGeneratorTest =
                       )
                   )
 
-                  let property2 = entityType.AddProperty("Ham", typeof<RawEnum>)
+                  let property2 =
+                      entityType.AddProperty("Ham", typeof<RawEnum>)
 
                   property2.SetValueConverter(
                       ValueConverter<RawEnum, string>(
@@ -892,7 +961,8 @@ module FSharpMigrationsGeneratorTest =
 
                   entityType.SetPrimaryKey(property2) |> ignore
 
-                  let finalModel = modelBuilder.FinalizeModel(designTime = true)
+                  let finalModel =
+                      modelBuilder.FinalizeModel(designTime = true)
 
                   let modelSnapshotCode =
                       generator.GenerateSnapshot("MyNamespace", typeof<MyContext>, "MySnapshot", finalModel)
@@ -963,7 +1033,8 @@ module FSharpMigrationsGeneratorTest =
 
                   Expect.equal (modelSnapshotCode.Trim()) (expectedCode.Trim()) ""
 
-                  let snapshot = compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot"
+                  let snapshot =
+                      compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot"
 
                   Expect.equal (snapshot.Model.GetEntityTypes() |> Seq.length) 2 "Expect 2 entity types"
               }
@@ -971,152 +1042,262 @@ module FSharpMigrationsGeneratorTest =
               test "Snapshot with default values are round tripped" {
                   let generator = createMigrationsCodeGenerator ()
 
-                  let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                  let modelBuilder =
+                      RelationalTestHelpers.Instance.CreateConventionBuilder()
 
-                  modelBuilder.Entity<EntityWithEveryPrimitive>(fun eb ->
-                      eb.Property(fun e -> e.Boolean).HasDefaultValue(false) |> ignore
+                  modelBuilder.Entity<EntityWithEveryPrimitive>
+                      (fun eb ->
+                          eb
+                              .Property(fun e -> e.Boolean)
+                              .HasDefaultValue(false)
+                          |> ignore
 
-                      eb.Property(fun e -> e.Byte).HasDefaultValue(Byte.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.Byte)
+                              .HasDefaultValue(Byte.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.ByteArray).HasDefaultValue([| 0uy |]) |> ignore
+                          eb
+                              .Property(fun e -> e.ByteArray)
+                              .HasDefaultValue([| 0uy |])
+                          |> ignore
 
-                      eb.Property(fun e -> e.Char).HasDefaultValue('0') |> ignore
+                          eb.Property(fun e -> e.Char).HasDefaultValue('0')
+                          |> ignore
 
-                      eb.Property(fun e -> e.DateTime).HasDefaultValue(DateTime.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.DateTime)
+                              .HasDefaultValue(DateTime.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.DateTimeOffset).HasDefaultValue(DateTimeOffset.MinValue)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.DateTimeOffset)
+                              .HasDefaultValue(DateTimeOffset.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.Decimal).HasDefaultValue(Decimal.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.Decimal)
+                              .HasDefaultValue(Decimal.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.Double).HasDefaultValue(Double.MinValue) |> ignore //double.NegativeInfinity
+                          eb
+                              .Property(fun e -> e.Double)
+                              .HasDefaultValue(Double.MinValue)
+                          |> ignore //double.NegativeInfinity
 
-                      eb.Property(fun e -> e.Enum).HasDefaultValue(Enum1.Default) |> ignore
+                          eb
+                              .Property(fun e -> e.Enum)
+                              .HasDefaultValue(Enum1.Default)
+                          |> ignore
 
-                      eb
-                          .Property(fun e -> e.NullableEnum)
-                          .HasDefaultValue(Enum1.Default)
-                          .HasConversion<string>()
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableEnum)
+                              .HasDefaultValue(Enum1.Default)
+                              .HasConversion<string>()
+                          |> ignore
 
-                      eb.Property(fun e -> e.Guid).HasDefaultValue(Guid.NewGuid()) |> ignore
+                          eb
+                              .Property(fun e -> e.Guid)
+                              .HasDefaultValue(Guid.NewGuid())
+                          |> ignore
 
-                      eb.Property(fun e -> e.Int16).HasDefaultValue(Int16.MaxValue) |> ignore
+                          eb
+                              .Property(fun e -> e.Int16)
+                              .HasDefaultValue(Int16.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.Int32).HasDefaultValue(Int32.MaxValue) |> ignore
+                          eb
+                              .Property(fun e -> e.Int32)
+                              .HasDefaultValue(Int32.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.Int64).HasDefaultValue(Int64.MaxValue) |> ignore
+                          eb
+                              .Property(fun e -> e.Int64)
+                              .HasDefaultValue(Int64.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.Single).HasDefaultValue(Single.Epsilon) |> ignore
+                          eb
+                              .Property(fun e -> e.Single)
+                              .HasDefaultValue(Single.Epsilon)
+                          |> ignore
 
-                      eb.Property(fun e -> e.SByte).HasDefaultValue(SByte.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.SByte)
+                              .HasDefaultValue(SByte.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.String).HasDefaultValue("'\"'@\r\\\n") |> ignore
+                          eb
+                              .Property(fun e -> e.String)
+                              .HasDefaultValue("'\"'@\r\\\n")
+                          |> ignore
 
-                      eb.Property(fun e -> e.TimeSpan).HasDefaultValue(TimeSpan.MaxValue) |> ignore
+                          eb
+                              .Property(fun e -> e.TimeSpan)
+                              .HasDefaultValue(TimeSpan.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.UInt16).HasDefaultValue(UInt16.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.UInt16)
+                              .HasDefaultValue(UInt16.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.UInt32).HasDefaultValue(UInt32.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.UInt32)
+                              .HasDefaultValue(UInt32.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.UInt64).HasDefaultValue(UInt64.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.UInt64)
+                              .HasDefaultValue(UInt64.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableBoolean).HasDefaultValue(true) |> ignore
+                          eb
+                              .Property(fun e -> e.NullableBoolean)
+                              .HasDefaultValue(true)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableByte).HasDefaultValue(Byte.MaxValue) |> ignore
+                          eb
+                              .Property(fun e -> e.NullableByte)
+                              .HasDefaultValue(Byte.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableChar).HasDefaultValue('\'') |> ignore
+                          eb
+                              .Property(fun e -> e.NullableChar)
+                              .HasDefaultValue('\'')
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableDateTime).HasDefaultValue(DateTime.MaxValue)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableDateTime)
+                              .HasDefaultValue(DateTime.MaxValue)
+                          |> ignore
 
-                      eb
-                          .Property(fun e -> e.NullableDateTimeOffset)
-                          .HasDefaultValue(DateTimeOffset.MaxValue)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableDateTimeOffset)
+                              .HasDefaultValue(DateTimeOffset.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableDecimal).HasDefaultValue(Decimal.MaxValue)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableDecimal)
+                              .HasDefaultValue(Decimal.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableDouble).HasDefaultValue(0.6822871999174)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableDouble)
+                              .HasDefaultValue(0.6822871999174)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableEnum).HasDefaultValue(Enum1.One ||| Enum1.Two)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableEnum)
+                              .HasDefaultValue(Enum1.One ||| Enum1.Two)
+                          |> ignore
 
-                      eb
-                          .Property(fun e -> e.NullableStringEnum)
-                          .HasDefaultValue(Enum1.One)
-                          .HasConversion<string>()
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableStringEnum)
+                              .HasDefaultValue(Enum1.One)
+                              .HasConversion<string>()
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableGuid).HasDefaultValue(Guid()) |> ignore
+                          eb
+                              .Property(fun e -> e.NullableGuid)
+                              .HasDefaultValue(Guid())
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableInt16).HasDefaultValue(Int16.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.NullableInt16)
+                              .HasDefaultValue(Int16.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableInt32).HasDefaultValue(Int32.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.NullableInt32)
+                              .HasDefaultValue(Int32.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableInt64).HasDefaultValue(Int64.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.NullableInt64)
+                              .HasDefaultValue(Int64.MinValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableSingle).HasDefaultValue(0.3333333) |> ignore
+                          eb
+                              .Property(fun e -> e.NullableSingle)
+                              .HasDefaultValue(0.3333333)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableSByte).HasDefaultValue(SByte.MinValue) |> ignore
+                          eb
+                              .Property(fun e -> e.NullableSByte)
+                              .HasDefaultValue(SByte.MinValue)
+                          |> ignore
 
-                      eb
-                          .Property(fun e -> e.NullableTimeSpan)
-                          .HasDefaultValue(TimeSpan.MinValue.Add(TimeSpan()))
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableTimeSpan)
+                              .HasDefaultValue(TimeSpan.MinValue.Add(TimeSpan()))
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableUInt16).HasDefaultValue(UInt16.MaxValue)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableUInt16)
+                              .HasDefaultValue(UInt16.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableUInt32).HasDefaultValue(UInt32.MaxValue)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableUInt32)
+                              .HasDefaultValue(UInt32.MaxValue)
+                          |> ignore
 
-                      eb.Property(fun e -> e.NullableUInt64).HasDefaultValue(UInt64.MaxValue)
-                      |> ignore
+                          eb
+                              .Property(fun e -> e.NullableUInt64)
+                              .HasDefaultValue(UInt64.MaxValue)
+                          |> ignore
 
-                      eb.HasKey(fun e -> e.Boolean :> obj) |> ignore)
+                          eb.HasKey(fun e -> e.Boolean :> obj) |> ignore)
                   |> ignore
 
-                  let model = modelBuilder.FinalizeModel(designTime = true)
+                  let model =
+                      modelBuilder.FinalizeModel(designTime = true)
 
                   let modelSnapshotCode =
                       generator.GenerateSnapshot("MyNamespace", typeof<MyContext>, "MySnapshot", model)
 
-                  let snapshot = compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot"
+                  let snapshot =
+                      compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot"
 
-                  let entityType = snapshot.Model.GetEntityTypes() |> Seq.head
+                  let entityType =
+                      snapshot.Model.GetEntityTypes() |> Seq.head
 
                   Expect.equal
                       (entityType.DisplayName())
-                      (typeof<EntityWithEveryPrimitive>.FullName + " (Dictionary<string, object>)")
+                      (typeof<EntityWithEveryPrimitive>.FullName
+                       + " (Dictionary<string, object>)")
                       ""
 
-                  (modelBuilder.Model.GetEntityTypes() |> Seq.head).GetProperties()
-                  |> Seq.iter (fun property ->
-                      let expected = property.GetDefaultValue()
+                  (modelBuilder.Model.GetEntityTypes() |> Seq.head)
+                      .GetProperties()
+                  |> Seq.iter
+                      (fun property ->
+                          let expected = property.GetDefaultValue()
 
-                      let defaultValue = entityType.FindProperty(property.Name).GetDefaultValue()
+                          let defaultValue =
+                              entityType
+                                  .FindProperty(property.Name)
+                                  .GetDefaultValue()
 
-                      let actual =
-                          match expected |> Option.ofObj, defaultValue |> Option.ofObj with
-                          | Some expected, Some actual' when expected.GetType().IsEnum ->
-                              match actual' with
-                              | :? String as a -> Enum.Parse(expected.GetType(), a)
-                              | _ -> Enum.ToObject(expected.GetType(), actual')
-                          | Some expected, Some actual' when actual'.GetType() <> expected.GetType() ->
-                              Convert.ChangeType(actual', expected.GetType())
-                          | _ -> defaultValue
+                          let actual =
+                              match expected |> Option.ofObj, defaultValue |> Option.ofObj with
+                              | Some expected, Some actual' when expected.GetType().IsEnum ->
+                                  match actual' with
+                                  | :? String as a -> Enum.Parse(expected.GetType(), a)
+                                  | _ -> Enum.ToObject(expected.GetType(), actual')
+                              | Some expected, Some actual' when actual'.GetType() <> expected.GetType() ->
+                                  Convert.ChangeType(actual', expected.GetType())
+                              | _ -> defaultValue
 
-                      if actual |> isNull |> not && expected |> isNull |> not then
-                          Expect.equal
-                              actual
-                              expected
-                              $"""Comparison failed for {if actual.GetType() = typeof<Nullable<_>> then
-                                                             $"Nullable<{(Nullable.GetUnderlyingType(actual.GetType()))}>"
-                                                         else
-                                                             property.ClrType.Name}""")
+                          if actual |> isNull |> not
+                             && expected |> isNull |> not then
+                              Expect.equal
+                                  actual
+                                  expected
+                                  $"""Comparison failed for {if actual.GetType() = typeof<Nullable<_>> then
+                                                                 $"Nullable<{(Nullable.GetUnderlyingType(actual.GetType()))}>"
+                                                             else
+                                                                 property.ClrType.Name}""")
               }
 
               test "Namespaces imported for insert data" {
@@ -1134,7 +1315,8 @@ module FSharpMigrationsGeneratorTest =
                           []
                       )
 
-                  let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                  let modelBuilder =
+                      RelationalTestHelpers.Instance.CreateConventionBuilder()
 
                   let model = modelBuilder.Model.FinalizeModel()
 
@@ -1167,7 +1349,8 @@ module FSharpMigrationsGeneratorTest =
                           []
                       )
 
-                  let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                  let modelBuilder =
+                      RelationalTestHelpers.Instance.CreateConventionBuilder()
 
                   let model = modelBuilder.Model.FinalizeModel()
 
@@ -1200,7 +1383,8 @@ module FSharpMigrationsGeneratorTest =
                           []
                       )
 
-                  let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                  let modelBuilder =
+                      RelationalTestHelpers.Instance.CreateConventionBuilder()
 
                   let model = modelBuilder.Model.FinalizeModel()
 
@@ -1231,7 +1415,8 @@ module FSharpMigrationsGeneratorTest =
                           []
                       )
 
-                  let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                  let modelBuilder =
+                      RelationalTestHelpers.Instance.CreateConventionBuilder()
 
                   let model = modelBuilder.Model.FinalizeModel()
 

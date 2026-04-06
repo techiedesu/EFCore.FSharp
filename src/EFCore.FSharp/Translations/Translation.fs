@@ -41,6 +41,7 @@ type FSharpTypeOptionsExtension() =
                 .TryAdd<IMethodCallTranslatorPlugin, FSharpMethodCallTranslatorPlugin>()
             |> ignore
 
-        member this.Info = ExtensionInfo(this :> IDbContextOptionsExtension) :> _
+        member this.Info =
+            ExtensionInfo(this :> IDbContextOptionsExtension) :> _
 
         member this.Validate _ = ()

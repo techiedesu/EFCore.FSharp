@@ -9,8 +9,9 @@ open Microsoft.EntityFrameworkCore
 type TestProviderCodeGenerator(dependencies) =
     inherit ProviderCodeGenerator(dependencies)
 
-    let getRequiredRuntimeMethod (t: Type, name: string, parameters: Type[]) =
-        let result = t.GetTypeInfo().GetRuntimeMethod(name, parameters)
+    let getRequiredRuntimeMethod (t: Type, name: string, parameters: Type []) =
+        let result =
+            t.GetTypeInfo().GetRuntimeMethod(name, parameters)
 
         if isNull result then
             invalidOp $"Could not find method '{name}' on type '{t}'"
@@ -21,13 +22,18 @@ type TestProviderCodeGenerator(dependencies) =
         let t = typeof<TestProviderCodeGenerator>
 
         let parameters =
-            [| typeof<DbContextOptionsBuilder>; typeof<string>; typeof<Action<obj>> |]
+            [| typeof<DbContextOptionsBuilder>
+               typeof<string>
+               typeof<Action<obj>> |]
 
         getRequiredRuntimeMethod (t, "UseTestProvider", parameters)
 
     static member UseTestProvider
-        (optionsBuilder: DbContextOptionsBuilder, connectionString: string, optionsAction: Action<obj>)
-        =
+        (
+            optionsBuilder: DbContextOptionsBuilder,
+            connectionString: string,
+            optionsAction: Action<obj>
+        ) =
         raise (NotSupportedException())
 
     override this.GenerateUseProvider(connectionString, providerOptions) =

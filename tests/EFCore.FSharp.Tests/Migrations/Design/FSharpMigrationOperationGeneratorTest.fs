@@ -31,9 +31,12 @@ open System.Data
 open Microsoft.Data.SqlClient
 
 type GeometryValueCoverter<'geometry when 'geometry :> Geometry>
-    (reader: SqlServerBytesReader, writer: SqlServerBytesWriter) =
-    inherit
-        ValueConverter<'geometry, SqlBytes>(
+    (
+        reader: SqlServerBytesReader,
+        writer: SqlServerBytesWriter
+    ) =
+    inherit ValueConverter<'geometry, SqlBytes>
+        (
             (fun g -> SqlBytes(writer.Write g)),
             (fun b -> reader.Read(b.Value) :?> 'geometry)
         )
@@ -43,16 +46,21 @@ module Helpers =
         let isGeography =
             String.Equals(storeType, "geography", StringComparison.OrdinalIgnoreCase)
 
-        let reader = SqlServerBytesReader(geometryServices, IsGeography = isGeography)
+        let reader =
+            SqlServerBytesReader(geometryServices, IsGeography = isGeography)
 
-        let writer = SqlServerBytesWriter(IsGeography = isGeography)
+        let writer =
+            SqlServerBytesWriter(IsGeography = isGeography)
 
         GeometryValueCoverter<'geometry>(reader, writer)
 
 type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
-    (geometryServices: NtsGeometryServices, storeType: string) =
-    inherit
-        RelationalGeometryTypeMapping<'geometry, SqlBytes>(
+    (
+        geometryServices: NtsGeometryServices,
+        storeType: string
+    ) =
+    inherit RelationalGeometryTypeMapping<'geometry, SqlBytes>
+        (
             (Helpers.createConverter geometryServices storeType),
             storeType
         )
@@ -61,12 +69,14 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
         String.Equals(storeType, "geography", StringComparison.OrdinalIgnoreCase)
 
     let getSqlBytes =
-        typeof<SqlDataReader>.GetRuntimeMethod("GetSqlBytes", [| typeof<int> |])
+        typeof<SqlDataReader>.GetRuntimeMethod ("GetSqlBytes", [| typeof<int> |])
 
     let createSqlDbTypeAccessor paramType =
-        let paramParam = Expression.Parameter(typeof<DbParameter>, "parameter")
+        let paramParam =
+            Expression.Parameter(typeof<DbParameter>, "parameter")
 
-        let valueParam = Expression.Parameter(typeof<SqlDbType>, "value")
+        let valueParam =
+            Expression.Parameter(typeof<SqlDbType>, "value")
 
         Expression
             .Lambda<Action<DbParameter, SqlDbType>>(
@@ -82,9 +92,11 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
 
     let createUdtTypeNameAccessor (paramType) =
 
-        let paramParam = Expression.Parameter(typeof<DbParameter>, "parameter")
+        let paramParam =
+            Expression.Parameter(typeof<DbParameter>, "parameter")
 
-        let valueParam = Expression.Parameter(typeof<string>, "value")
+        let valueParam =
+            Expression.Parameter(typeof<string>, "value")
 
         Expression
             .Lambda<Action<DbParameter, string>>(
@@ -109,17 +121,34 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
             (geometry = (Point.Empty :> Geometry))
             || (geometry.SRID = (if isGeography then 4326 else 0))
 
-        let g = if isGeography then "geography" else "geometry"
+        let g =
+            if isGeography then
+                "geography"
+            else
+                "geometry"
 
-        let m = if defaultSrid then "Parse" else "STGeomFromText"
+        let m =
+            if defaultSrid then
+                "Parse"
+            else
+                "STGeomFromText"
 
-        let a = (WKTWriter.ForMicrosoftSqlServer()).Write(geometry)
+        let a =
+            (WKTWriter.ForMicrosoftSqlServer())
+                .Write(geometry)
 
-        builder.Append(g).Append("::").Append(m).Append("('").Append(a).Append("'")
+        builder
+            .Append(g)
+            .Append("::")
+            .Append(m)
+            .Append("('")
+            .Append(a)
+            .Append("'")
         |> ignore
 
         if (not defaultSrid) then
-            builder.Append(", ").Append(geometry.SRID) |> ignore
+            builder.Append(", ").Append(geometry.SRID)
+            |> ignore
 
         builder.Append(")") |> ignore
 
@@ -144,7 +173,13 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
 
         sqlDbTypeSetter.Invoke(parameter, SqlDbType.Udt)
 
-        udtTypeNameSetter.Invoke(parameter, (if isGeography then "geography" else "geometry"))
+        udtTypeNameSetter.Invoke(
+            parameter,
+            (if isGeography then
+                 "geography"
+             else
+                 "geometry")
+        )
 
 type SqlServerNetTopologySuiteTypeMappingSourcePlugin(geometryServices) =
 
@@ -158,16 +193,25 @@ type SqlServerNetTopologySuiteTypeMappingSourcePlugin(geometryServices) =
             let storeTypeName = mappingInfo.StoreTypeName
 
             if
-                typeof<Geometry>.IsAssignableFrom(clrType)
-                || (notNull storeTypeName && spatialStoresTypes.Contains(storeTypeName))
+                typeof<Geometry>.IsAssignableFrom (clrType)
+                || (notNull storeTypeName
+                    && spatialStoresTypes.Contains(storeTypeName))
             then
-                let genericType = if notNull clrType then clrType else typeof<Geometry>
+                let genericType =
+                    if notNull clrType then
+                        clrType
+                    else
+                        typeof<Geometry>
 
-                let storeName = if notNull storeTypeName then storeTypeName else "geography"
+                let storeName =
+                    if notNull storeTypeName then
+                        storeTypeName
+                    else
+                        "geography"
 
                 let instance =
                     Activator.CreateInstance(
-                        typedefof<SqlServerGeometryTypeMapping<_>>.MakeGenericType(genericType),
+                        typedefof<SqlServerGeometryTypeMapping<_>>.MakeGenericType (genericType),
                         geometryServices,
                         storeName
                     )
@@ -219,33 +263,40 @@ module FSharpMigrationOperationGeneratorTest =
 
         let builder = IndentedStringBuilder()
 
-        builder.AppendLine "namespace TestOperations" |> ignore
+        builder.AppendLine "namespace TestOperations"
+        |> ignore
 
         builder.AppendLine "" |> ignore
 
         builder.AppendLine "open System" |> ignore
 
-        builder.AppendLine "open Microsoft.EntityFrameworkCore.Migrations" |> ignore
+        builder.AppendLine "open Microsoft.EntityFrameworkCore.Migrations"
+        |> ignore
 
-        builder.AppendLine "open NetTopologySuite.Geometries" |> ignore
+        builder.AppendLine "open NetTopologySuite.Geometries"
+        |> ignore
 
         builder.AppendLine "" |> ignore
 
-        builder.AppendLine "module OperationsFactory =" |> ignore
+        builder.AppendLine "module OperationsFactory ="
+        |> ignore
 
         builder.IncrementIndent() |> ignore
         builder.AppendLine "" |> ignore
 
-        builder.AppendLine "let Create(mb: MigrationBuilder) =" |> ignore
+        builder.AppendLine "let Create(mb: MigrationBuilder) ="
+        |> ignore
 
         let expected = IndentedStringBuilder()
 
-        expected.AppendLines(builder.ToString(), false) |> ignore
+        expected.AppendLines(builder.ToString(), false)
+        |> ignore
 
         expected.IncrementIndent() |> ignore
         expected.IncrementIndent() |> ignore
 
-        expected.AppendLines(expectedCode, false) |> ignore
+        expected.AppendLines(expectedCode, false)
+        |> ignore
 
 
         builder.IncrementIndent() |> ignore
@@ -271,12 +322,19 @@ module FSharpMigrationOperationGeneratorTest =
         let assembly = build.BuildInMemory(references)
 
         let factoryType =
-            (assembly :> System.Reflection.Assembly).GetTypes()
+            (assembly :> System.Reflection.Assembly)
+                .GetTypes()
             |> Seq.find (fun (m: System.Type) -> m.Name = "OperationsFactory")
 
-        let createMethod = (factoryType: System.Type).GetMethod("Create")
+        let createMethod =
+            (factoryType: System.Type).GetMethod("Create")
+
         let mb = MigrationBuilder(activeProvider = null)
-        (createMethod: System.Reflection.MethodInfo).Invoke(null, [| mb |]) |> ignore
+
+        (createMethod: System.Reflection.MethodInfo)
+            .Invoke(null, [| mb |])
+        |> ignore
+
         let result = mb.Operations.Cast<'a>().Single()
 
         ``assert`` result
@@ -312,7 +370,8 @@ module FSharpMigrationOperationGeneratorTest =
               }
 
               test "AddColumnOperation required args" {
-                  let op = AddColumnOperation(Name = "Id", Table = "Post", ClrType = typeof<int>)
+                  let op =
+                      AddColumnOperation(Name = "Id", Table = "Post", ClrType = typeof<int>)
 
                   let expected =
                       seq {
@@ -356,7 +415,8 @@ module FSharpMigrationOperationGeneratorTest =
               }
 
               test "CreateTableOperation optional args" {
-                  let op = CreateTableOperation(Name = "MyTable", Schema = "MySchema")
+                  let op =
+                      CreateTableOperation(Name = "MyTable", Schema = "MySchema")
 
                   op.Columns.Add
                   <| AddColumnOperation(Name = "Id", Table = "MyTable", ClrType = typeof<Guid>)

@@ -11,11 +11,11 @@ let ValueConvertersTest =
     testList
         "ValueConvertersTest"
         [ test "string -> string option" {
-              let c = Conversion.toOption<string>
-              Expect.equal (c.Compile().Invoke(null)) None "Should be equal"
+            let c = Conversion.toOption<string>
+            Expect.equal (c.Compile().Invoke(null)) None "Should be equal"
 
-              let g = "test"
-              Expect.equal (c.Compile().Invoke(g)) (Some g) "Should be equal"
+            let g = "test"
+            Expect.equal (c.Compile().Invoke(g)) (Some g) "Should be equal"
           }
 
           test "string option -> string" {
@@ -49,7 +49,8 @@ let ValueConvertersTest =
           }
 
           test "string -> string SingleCaseUnion" {
-              let c = Conversion.toSingleCaseUnion<string, SingleCaseUnion>
+              let c =
+                  Conversion.toSingleCaseUnion<string, SingleCaseUnion>
 
               let g = "test"
               Expect.equal (c.Compile().Invoke(g)) (SingleCaseUnion g) "Should be equal"
@@ -57,14 +58,16 @@ let ValueConvertersTest =
 
 
           test "string SingleCaseUnion -> string" {
-              let c = Conversion.fromFromSingleCase<string, SingleCaseUnion>
+              let c =
+                  Conversion.fromFromSingleCase<string, SingleCaseUnion>
 
               let g = "test"
               Expect.equal (c.Compile().Invoke(SingleCaseUnion g)) g "Should be equal"
           }
 
           test "Can create SingleCaseUnionConverter" {
-              let oc = SingleCaseUnionConverter<string, SingleCaseUnion>()
+              let oc =
+                  SingleCaseUnionConverter<string, SingleCaseUnion>()
 
               Expect.isNotNull (box oc) "Should not be null"
           } ]

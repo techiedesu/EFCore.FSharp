@@ -17,7 +17,7 @@ module FSharpUtilities =
     let private _primitiveTypeNames =
         [ (typeof<bool>, "bool")
           (typeof<byte>, "byte")
-          (typeof<byte[]>, "byte[]")
+          (typeof<byte []>, "byte[]")
           (typeof<sbyte>, "sbyte")
           (typeof<char>, "char")
           (typeof<int16>, "Int16")
@@ -41,7 +41,10 @@ module FSharpUtilities =
         |> dict
 
     let private escapeString (str: string) =
-        str.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\t", "\\t")
+        str
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\t", "\\t")
 
     let private escapeVerbatimString (str: string) = str.Replace("\"", "\"\"")
 
@@ -49,7 +52,10 @@ module FSharpUtilities =
         "new byte[] {" + String.Join(", ", value) + "}"
 
     let private generateLiteralStringArray (value: string array) =
-        "[| " + (value |> Array.fold (fun c n -> c + "\"" + n + "\"; ") "") + "|]"
+        "[| "
+        + (value
+           |> Array.fold (fun c n -> c + "\"" + n + "\"; ") "")
+        + "|]"
 
     let private generateLiteralBool (value: bool) = if value then "true" else "false"
 
@@ -222,11 +228,12 @@ module FSharpUtilities =
 
                 let args =
                     t.GenericTypeArguments
-                    |> Array.map (fun t' ->
-                        if isNull t' then
-                            failwithf "%s has a null arg" t.Name
-                        else
-                            t' |> getTypeName)
+                    |> Array.map
+                        (fun t' ->
+                            if isNull t' then
+                                failwithf "%s has a null arg" t.Name
+                            else
+                                t' |> getTypeName)
                     |> join ", "
 
                 match _fsharpTypeNames.TryGetValue genericTypeDefName with
@@ -260,15 +267,21 @@ module FSharpUtilities =
 
     let generate (methodCallCodeFragment: MethodCallCodeFragment) =
         let parameters =
-            methodCallCodeFragment.Arguments |> Seq.map generateLiteral |> join ", "
+            methodCallCodeFragment.Arguments
+            |> Seq.map generateLiteral
+            |> join ", "
 
         sprintf ".%s(%s)" methodCallCodeFragment.Method parameters
 
     let OptionOfNullableObj v : 'a option =
-        (v: 'a) |> box |> Option.ofObj |> Option.map (fun x -> x :?> 'a)
+        (v: 'a)
+        |> box
+        |> Option.ofObj
+        |> Option.map (fun x -> x :?> 'a)
 
     let exprToLinq (expr: Expr<'a -> 'b>) =
-        let linq = LeafExpressionConverter.QuotationToExpression expr
+        let linq =
+            LeafExpressionConverter.QuotationToExpression expr
 
         let call = linq :?> MethodCallExpression
         let lambda = call.Arguments.[0] :?> LambdaExpression

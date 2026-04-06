@@ -19,7 +19,8 @@ open Microsoft.EntityFrameworkCore.Design.Internal
 type ModelCodeGeneratorTestBase() =
 
     let createServices () =
-        let testAssembly = (typeof<ModelCodeGeneratorTestBase>).Assembly
+        let testAssembly =
+            (typeof<ModelCodeGeneratorTestBase>).Assembly
 
         let reporter = TestOperationReporter()
 
@@ -73,10 +74,12 @@ type ModelCodeGeneratorTestBase() =
         let runtimeDir =
             System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
-        let runtimeRefs = runtimeNames |> List.map (fun r -> runtimeDir + r)
+        let runtimeRefs =
+            runtimeNames |> List.map (fun r -> runtimeDir + r)
 
         let localRefs =
-            let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+            let thisAssembly =
+                System.Reflection.Assembly.GetExecutingAssembly()
 
             let location =
                 thisAssembly.Location.Replace(thisAssembly.GetName().Name + ".dll", "")
@@ -141,7 +144,9 @@ type ModelCodeGeneratorTestBase() =
 
         let sources =
             scaffoldedModel.ContextFile.Code
-            :: (scaffoldedModel.AdditionalFiles |> Seq.map (fun f -> f.Code) |> Seq.toList)
+            :: (scaffoldedModel.AdditionalFiles
+                |> Seq.map (fun f -> f.Code)
+                |> Seq.toList)
             @ additionalSources
             |> List.rev
 

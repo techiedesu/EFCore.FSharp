@@ -14,11 +14,12 @@ let environVarAsBoolOrDefault varName defaultValue =
     let truthyConsts = [ "1"; "Y"; "YES"; "T"; "TRUE" ]
 
     try
-        let envvar = (Environment.environVar varName).ToUpper()
+        let envvar =
+            (Environment.environVar varName).ToUpper()
 
         truthyConsts |> List.exists ((=) envvar)
-    with _ ->
-        defaultValue
+    with
+    | _ -> defaultValue
 
 //-----------------------------------------------------------------------------
 // Metadata and Configuration
@@ -26,22 +27,35 @@ let environVarAsBoolOrDefault varName defaultValue =
 
 let productName = "EFCore.FSharp"
 
-let sln = __SOURCE_DIRECTORY__ </> ".." </> "EFCore.FSharp.sln"
+let sln =
+    __SOURCE_DIRECTORY__
+    </> ".."
+    </> "EFCore.FSharp.sln"
 
 
 let srcCodeGlob =
     !!(__SOURCE_DIRECTORY__ </> ".." </> "src/**/*.fs")
     ++ (__SOURCE_DIRECTORY__ </> ".." </> "src/**/*.fsx")
-    -- (__SOURCE_DIRECTORY__ </> ".." </> "src/**/obj/**/*.fs")
+    -- (__SOURCE_DIRECTORY__
+        </> ".."
+        </> "src/**/obj/**/*.fs")
 
 let testsCodeGlob =
     !!(__SOURCE_DIRECTORY__ </> ".." </> "tests/**/*.fs")
     ++ (__SOURCE_DIRECTORY__ </> ".." </> "tests/**/*.fsx")
-    -- (__SOURCE_DIRECTORY__ </> ".." </> "tests/**/obj/**/*.fs")
+    -- (__SOURCE_DIRECTORY__
+        </> ".."
+        </> "tests/**/obj/**/*.fs")
 
-let srcGlob = __SOURCE_DIRECTORY__ </> ".." </> "src/**/*.??proj"
+let srcGlob =
+    __SOURCE_DIRECTORY__
+    </> ".."
+    </> "src/**/*.??proj"
 
-let testsGlob = __SOURCE_DIRECTORY__ </> ".." </> "tests/**/*.??proj"
+let testsGlob =
+    __SOURCE_DIRECTORY__
+    </> ".."
+    </> "tests/**/*.??proj"
 
 let srcAndTest = !!srcGlob ++ testsGlob
 
@@ -50,27 +64,36 @@ let distGlob = distDir </> "*.nupkg"
 
 let coverageThresholdPercent = 55
 
-let coverageReportDir = __SOURCE_DIRECTORY__ </> ".." </> "docs" </> "coverage"
+let coverageReportDir =
+    __SOURCE_DIRECTORY__
+    </> ".."
+    </> "docs"
+    </> "coverage"
 
 
 let docsDir = __SOURCE_DIRECTORY__ </> ".." </> "docs"
 
-let docsSrcDir = __SOURCE_DIRECTORY__ </> ".." </> "docsSrc"
+let docsSrcDir =
+    __SOURCE_DIRECTORY__ </> ".." </> "docsSrc"
 
-let docsToolDir = __SOURCE_DIRECTORY__ </> ".." </> "docsTool"
+let docsToolDir =
+    __SOURCE_DIRECTORY__ </> ".." </> "docsTool"
 
 let gitOwner = "efcore"
 let gitRepoName = "EFCore.FSharp"
 
-let gitHubRepoUrl = sprintf "https://github.com/%s/%s" gitOwner gitRepoName
+let gitHubRepoUrl =
+    sprintf "https://github.com/%s/%s" gitOwner gitRepoName
 
 let releaseBranch = "master"
 
 let tagFromVersionNumber versionNumber = sprintf "v%s" versionNumber
 
-let changelogFilename = __SOURCE_DIRECTORY__ </> ".." </> "CHANGELOG.md"
+let changelogFilename =
+    __SOURCE_DIRECTORY__ </> ".." </> "CHANGELOG.md"
 
-let changelog = Fake.Core.Changelog.load changelogFilename
+let changelog =
+    Fake.Core.Changelog.load changelogFilename
 
 let mutable latestEntry =
     if Seq.isEmpty changelog.Entries then
@@ -83,26 +106,36 @@ let mutable changelogBackupFilename = ""
 
 let publishUrl = "https://www.nuget.org"
 
-let docsSiteBaseUrl = sprintf "https://%s.github.io/%s" gitOwner gitRepoName
+let docsSiteBaseUrl =
+    sprintf "https://%s.github.io/%s" gitOwner gitRepoName
 
-let disableCodeCoverage = environVarAsBoolOrDefault "DISABLE_COVERAGE" false
+let disableCodeCoverage =
+    environVarAsBoolOrDefault "DISABLE_COVERAGE" false
 
-let githubToken = Environment.environVarOrNone "GITHUB_TOKEN"
+let githubToken =
+    Environment.environVarOrNone "GITHUB_TOKEN"
 
 
-let nugetToken = Environment.environVarOrNone "NUGET_TOKEN"
+let nugetToken =
+    Environment.environVarOrNone "NUGET_TOKEN"
 
 //-----------------------------------------------------------------------------
 // Helpers
 //-----------------------------------------------------------------------------
 
 let isRelease (targets: Target list) =
-    targets |> Seq.map (fun t -> t.Name) |> Seq.exists ((=) "Release")
+    targets
+    |> Seq.map (fun t -> t.Name)
+    |> Seq.exists ((=) "Release")
 
 let invokeAsync f = async { f () }
 
 let configuration (targets: Target list) =
-    let defaultVal = if isRelease targets then "Release" else "Debug"
+    let defaultVal =
+        if isRelease targets then
+            "Release"
+        else
+            "Debug"
 
     match Environment.environVarOrDefault "CONFIGURATION" defaultVal with
     | "Debug" -> DotNet.BuildConfiguration.Debug
@@ -121,8 +154,8 @@ let rec retryIfInCI times fn =
         if times > 1 then
             try
                 fn ()
-            with _ ->
-                retryIfInCI (times - 1) fn
+            with
+            | _ -> retryIfInCI (times - 1) fn
         else
             fn ()
     | _ -> fn ()
@@ -141,7 +174,7 @@ module Changelog =
         | Changelog.Change.Fixed s
         | Changelog.Change.Removed s
         | Changelog.Change.Security s
-        | Changelog.Change.Custom(_, s) -> String.IsNullOrWhiteSpace s.CleanedText
+        | Changelog.Change.Custom (_, s) -> String.IsNullOrWhiteSpace s.CleanedText
 
     let isChangelogEmpty () =
         let isEmpty =
@@ -166,9 +199,10 @@ module Changelog =
             // Changelog entries come already sorted, most-recent first, by the Changelog module
             let prevEntry =
                 changelog.Entries
-                |> List.skipWhile (fun entry ->
-                    entry.SemVer.PreRelease.IsSome
-                    && versionTuple entry.SemVer = versionTuple newVersion)
+                |> List.skipWhile
+                    (fun entry ->
+                        entry.SemVer.PreRelease.IsSome
+                        && versionTuple entry.SemVer = versionTuple newVersion)
                 |> List.tryHead
 
             let linkTarget =
@@ -195,7 +229,7 @@ module Changelog =
                 | Some desc -> sprintf "%s\n\n%s" (desc.Trim()) linkReference
 
             { latestEntry with
-                Description = Some description }
+                  Description = Some description }
                 .ToString()
 
     let getVersionNumber envVarName ctx =
@@ -208,7 +242,10 @@ module Changelog =
 
         if SemVer.isValid verArg then
             verArg
-        elif verArg.StartsWith("v") && SemVer.isValid verArg.[1..] then
+        elif
+            verArg.StartsWith("v")
+            && SemVer.isValid verArg.[1..]
+        then
             let target = ctx.Context.FinalTarget
 
             Trace.traceImportantfn
@@ -243,7 +280,8 @@ module dotnet =
     let run cmdParam args = DotNet.exec cmdParam "run" args
 
     let tool optionConfig command args =
-        DotNet.exec optionConfig (sprintf "%s" command) args |> failOnBadExitAndPrint
+        DotNet.exec optionConfig (sprintf "%s" command) args
+        |> failOnBadExitAndPrint
 
     let reportgenerator optionConfig args =
         tool optionConfig "reportgenerator" args
@@ -274,7 +312,8 @@ open DocsTool.CLIArgs
 module DocsTool =
     open Argu
 
-    let buildparser = ArgumentParser.Create<BuildArgs>(programName = "docstool")
+    let buildparser =
+        ArgumentParser.Create<BuildArgs>(programName = "docstool")
 
     let buildCLI () =
         [ BuildArgs.SiteBaseUrl docsSiteBaseUrl
@@ -290,11 +329,12 @@ module DocsTool =
         dotnet.run
             (fun args ->
                 { args with
-                    WorkingDirectory = docsToolDir })
+                      WorkingDirectory = docsToolDir })
             (sprintf " -- build %s" (buildCLI ()))
         |> failOnBadExitAndPrint
 
-    let watchparser = ArgumentParser.Create<WatchArgs>(programName = "docstool")
+    let watchparser =
+        ArgumentParser.Create<WatchArgs>(programName = "docstool")
 
     let watchCLI () =
         [ WatchArgs.ProjectGlob srcGlob
@@ -308,7 +348,7 @@ module DocsTool =
         dotnet.watch
             (fun args ->
                 { args with
-                    WorkingDirectory = docsToolDir })
+                      WorkingDirectory = docsToolDir })
             "run"
             (sprintf "-- watch %s" (watchCLI ()))
         |> failOnBadExitAndPrint
@@ -323,25 +363,36 @@ let allReleaseChecks () =
 
 
 let clean _ =
-    [ "bin"; "temp"; distDir; coverageReportDir ] |> Shell.cleanDirs
-
-    !!srcGlob ++ testsGlob
-    |> Seq.collect (fun p -> [ "bin"; "obj" ] |> Seq.map (fun sp -> IO.Path.GetDirectoryName p </> sp))
+    [ "bin"
+      "temp"
+      distDir
+      coverageReportDir ]
     |> Shell.cleanDirs
 
-    [ "paket-files/paket.restore.cached" ] |> Seq.iter Shell.rm
+    !!srcGlob ++ testsGlob
+    |> Seq.collect
+        (fun p ->
+            [ "bin"; "obj" ]
+            |> Seq.map (fun sp -> IO.Path.GetDirectoryName p </> sp))
+    |> Shell.cleanDirs
+
+    [ "paket-files/paket.restore.cached" ]
+    |> Seq.iter Shell.rm
 
 let dotnetRestore _ =
     [ sln ]
-    |> Seq.map (fun dir ->
-        fun () ->
-            let args = [] |> String.concat " "
+    |> Seq.map
+        (fun dir ->
+            fun () ->
+                let args = [] |> String.concat " "
 
-            DotNet.restore
-                (fun c ->
-                    { c with
-                        Common = c.Common |> DotNet.Options.withCustomParams (Some(args)) })
-                dir)
+                DotNet.restore
+                    (fun c ->
+                        { c with
+                              Common =
+                                  c.Common
+                                  |> DotNet.Options.withCustomParams (Some(args)) })
+                    dir)
     |> Seq.iter (retryIfInCI 10)
 
 let updateChangelog ctx =
@@ -350,52 +401,61 @@ let updateChangelog ctx =
         | None -> None, []
         | Some u -> u.Description, u.Changes
 
-    let verStr = ctx |> Changelog.getVersionNumber "RELEASE_VERSION"
+    let verStr =
+        ctx
+        |> Changelog.getVersionNumber "RELEASE_VERSION"
 
     let newVersion = SemVer.parse verStr
 
     changelog.Entries
     |> List.tryFind (fun entry -> entry.SemVer = newVersion)
-    |> Option.iter (fun entry ->
-        Trace.traceErrorfn
-            "Version %s already exists in %s, released on %s"
-            verStr
-            changelogFilename
-            (if entry.Date.IsSome then
-                 entry.Date.Value.ToString("yyyy-MM-dd")
-             else
-                 "(no date specified)")
+    |> Option.iter
+        (fun entry ->
+            Trace.traceErrorfn
+                "Version %s already exists in %s, released on %s"
+                verStr
+                changelogFilename
+                (if entry.Date.IsSome then
+                     entry.Date.Value.ToString("yyyy-MM-dd")
+                 else
+                     "(no date specified)")
 
-        failwith "Can't release with a duplicate version number")
+            failwith "Can't release with a duplicate version number")
 
     changelog.Entries
     |> List.tryFind (fun entry -> entry.SemVer > newVersion)
-    |> Option.iter (fun entry ->
-        Trace.traceErrorfn
-            "You're trying to release version %s, but a later version %s already exists, released on %s"
-            verStr
-            entry.SemVer.AsString
-            (if entry.Date.IsSome then
-                 entry.Date.Value.ToString("yyyy-MM-dd")
-             else
-                 "(no date specified)")
+    |> Option.iter
+        (fun entry ->
+            Trace.traceErrorfn
+                "You're trying to release version %s, but a later version %s already exists, released on %s"
+                verStr
+                entry.SemVer.AsString
+                (if entry.Date.IsSome then
+                     entry.Date.Value.ToString("yyyy-MM-dd")
+                 else
+                     "(no date specified)")
 
-        failwith "Can't release with a version number older than an existing release")
+            failwith "Can't release with a version number older than an existing release")
 
     let versionTuple version =
         (version.Major, version.Minor, version.Patch)
 
     let prereleaseEntries =
         changelog.Entries
-        |> List.filter (fun entry ->
-            entry.SemVer.PreRelease.IsSome
-            && versionTuple entry.SemVer = versionTuple newVersion)
+        |> List.filter
+            (fun entry ->
+                entry.SemVer.PreRelease.IsSome
+                && versionTuple entry.SemVer = versionTuple newVersion)
 
     let prereleaseChanges =
         prereleaseEntries
-        |> List.collect (fun entry -> entry.Changes |> List.filter (not << Changelog.isEmptyChange))
+        |> List.collect
+            (fun entry ->
+                entry.Changes
+                |> List.filter (not << Changelog.isEmptyChange))
 
-    let assemblyVersion, nugetVersion = Changelog.parseVersions newVersion.AsString
+    let assemblyVersion, nugetVersion =
+        Changelog.parseVersions newVersion.AsString
 
     linkReferenceForLatestEntry <- Changelog.mkLinkReference newVersion changelog
 
@@ -417,7 +477,8 @@ let updateChangelog ctx =
     // Save changelog to temporary file before making any edits
     changelogBackupFilename <- System.IO.Path.GetTempFileName()
 
-    changelogFilename |> Shell.copyFile changelogBackupFilename
+    changelogFilename
+    |> Shell.copyFile changelogBackupFilename
 
     Target.activateFinal "DeleteChangelogBackupFile"
 
@@ -429,7 +490,10 @@ let updateChangelog ctx =
     let linkReferenceForUnreleased =
         sprintf "[Unreleased]: %s/compare/%s...%s" gitHubRepoUrl (tagFromVersionNumber newVersion.AsString) "HEAD"
 
-    let tailLines = File.read changelogFilename |> List.ofSeq |> List.rev
+    let tailLines =
+        File.read changelogFilename
+        |> List.ofSeq
+        |> List.rev
 
     let isRef (line: string) =
         System.Text.RegularExpressions.Regex.IsMatch(line, @"^\[.+?\]:\s?[a-z]+://.*$")
@@ -442,19 +506,27 @@ let updateChangelog ctx =
 
     let newLinkReferenceTargets =
         match linkReferenceTargets with
-        | [] -> [ linkReferenceForUnreleased; linkReferenceForLatestEntry ]
+        | [] ->
+            [ linkReferenceForUnreleased
+              linkReferenceForLatestEntry ]
         | first :: rest when first |> String.startsWith "[Unreleased]:" ->
-            linkReferenceForUnreleased :: linkReferenceForLatestEntry :: rest
-        | first :: rest -> linkReferenceForUnreleased :: linkReferenceForLatestEntry :: first :: rest
+            linkReferenceForUnreleased
+            :: linkReferenceForLatestEntry :: rest
+        | first :: rest ->
+            linkReferenceForUnreleased
+            :: linkReferenceForLatestEntry :: first :: rest
 
     let blankLineCount =
-        tailLines |> Seq.takeWhile String.isNullOrWhiteSpace |> Seq.length
+        tailLines
+        |> Seq.takeWhile String.isNullOrWhiteSpace
+        |> Seq.length
 
     let linkRefCount = linkReferenceTargets |> List.length
     let skipCount = blankLineCount + linkRefCount
 
     let updatedLines =
-        List.rev (tailLines |> List.skip skipCount) @ newLinkReferenceTargets
+        List.rev (tailLines |> List.skip skipCount)
+        @ newLinkReferenceTargets
 
     File.write false changelogFilename updatedLines
 
@@ -463,7 +535,8 @@ let updateChangelog ctx =
 
 let revertChangelog _ =
     if String.isNotNullOrEmpty changelogBackupFilename then
-        changelogBackupFilename |> Shell.copyFile changelogFilename
+        changelogBackupFilename
+        |> Shell.copyFile changelogFilename
 
 let deleteChangelogBackupFile _ =
     if String.isNotNullOrEmpty changelogBackupFilename then
@@ -471,13 +544,14 @@ let deleteChangelogBackupFile _ =
 
 let dotnetBuild ctx =
     let args =
-        [ sprintf "/p:PackageVersion=%s" latestEntry.NuGetVersion; "--no-restore" ]
+        [ sprintf "/p:PackageVersion=%s" latestEntry.NuGetVersion
+          "--no-restore" ]
 
     DotNet.build
         (fun c ->
             { c with
-                Configuration = configuration (ctx.Context.AllExecutingTargets)
-                Common = c.Common |> DotNet.Options.withAdditionalArgs args
+                  Configuration = configuration (ctx.Context.AllExecutingTargets)
+                  Common = c.Common |> DotNet.Options.withAdditionalArgs args
 
             })
         sln
@@ -487,19 +561,26 @@ let fsharpAnalyzers _ =
         ArgumentParser.Create<FSharpAnalyzers.Arguments>(programName = "fsharp-analyzers")
 
     !!srcGlob
-    |> Seq.iter (fun proj ->
-        let args =
-            [ FSharpAnalyzers.Analyzers_Path(__SOURCE_DIRECTORY__ </> ".." </> "packages/analyzers")
-              FSharpAnalyzers.Arguments.Project proj
-              FSharpAnalyzers.Arguments.Fail_On_Warnings [ "BDH0002" ]
-              FSharpAnalyzers.Verbose ]
-            |> argParser.PrintCommandLineArgumentsFlat
+    |> Seq.iter
+        (fun proj ->
+            let args =
+                [ FSharpAnalyzers.Analyzers_Path(
+                    __SOURCE_DIRECTORY__
+                    </> ".."
+                    </> "packages/analyzers"
+                  )
+                  FSharpAnalyzers.Arguments.Project proj
+                  FSharpAnalyzers.Arguments.Fail_On_Warnings [ "BDH0002" ]
+                  FSharpAnalyzers.Verbose ]
+                |> argParser.PrintCommandLineArgumentsFlat
 
-        dotnet.fsharpAnalyzer id args)
+            dotnet.fsharpAnalyzer id args)
 
 let dotnetTest ctx =
     let excludeCoverage =
-        !!testsGlob |> Seq.map IO.Path.GetFileNameWithoutExtension |> String.concat "|"
+        !!testsGlob
+        |> Seq.map IO.Path.GetFileNameWithoutExtension
+        |> String.concat "|"
 
     let args =
         [ "--no-build"
@@ -512,14 +593,18 @@ let dotnetTest ctx =
         (fun c ->
 
             { c with
-                Configuration = configuration (ctx.Context.AllExecutingTargets)
-                Common = c.Common |> DotNet.Options.withAdditionalArgs args })
+                  Configuration = configuration (ctx.Context.AllExecutingTargets)
+                  Common = c.Common |> DotNet.Options.withAdditionalArgs args })
         sln
 
 let generateCoverageReport _ =
-    let coverageReports = !! "tests/**/coverage*.xml" |> String.concat ";"
+    let coverageReports =
+        !! "tests/**/coverage*.xml" |> String.concat ";"
 
-    let sourceDirs = !!srcGlob |> Seq.map Path.getDirectory |> String.concat ";"
+    let sourceDirs =
+        !!srcGlob
+        |> Seq.map Path.getDirectory
+        |> String.concat ";"
 
     let independentArgs =
         [ sprintf "-reports:\"%s\"" coverageReports
@@ -535,19 +620,29 @@ let generateCoverageReport _ =
 
 let watchTests _ =
     !!testsGlob
-    |> Seq.map (fun proj ->
-        fun () ->
-            dotnet.watch
-                (fun opt -> opt |> DotNet.Options.withWorkingDirectory (IO.Path.GetDirectoryName proj))
-                "test"
-                ""
-            |> ignore)
-    |> Seq.iter (invokeAsync >> Async.Catch >> Async.Ignore >> Async.Start)
+    |> Seq.map
+        (fun proj ->
+            fun () ->
+                dotnet.watch
+                    (fun opt ->
+                        opt
+                        |> DotNet.Options.withWorkingDirectory (IO.Path.GetDirectoryName proj))
+                    "test"
+                    ""
+                |> ignore)
+    |> Seq.iter (
+        invokeAsync
+        >> Async.Catch
+        >> Async.Ignore
+        >> Async.Start
+    )
 
     printfn "Press Ctrl+C (or Ctrl+Break) to stop..."
 
     let cancelEvent =
-        Console.CancelKeyPress |> Async.AwaitEvent |> Async.RunSynchronously
+        Console.CancelKeyPress
+        |> Async.AwaitEvent
+        |> Async.RunSynchronously
 
     cancelEvent.Cancel <- true
 
@@ -576,22 +671,33 @@ let generateAssemblyInfo _ =
           AssemblyInfo.Metadata("GitHash", Git.Information.getCurrentSHA1 (null)) ]
 
     let getProjectDetails (projectPath: string) =
-        let projectName = IO.Path.GetFileNameWithoutExtension(projectPath)
+        let projectName =
+            IO.Path.GetFileNameWithoutExtension(projectPath)
 
         (projectPath, projectName, IO.Path.GetDirectoryName(projectPath), (getAssemblyInfoAttributes projectName))
 
     srcAndTest
     |> Seq.map getProjectDetails
-    |> Seq.iter (fun (projFileName, _, folderName, attributes) ->
-        match projFileName with
-        | Fsproj -> AssemblyInfoFile.createFSharp (folderName </> "AssemblyInfo.fs") attributes
-        | Csproj -> AssemblyInfoFile.createCSharp ((folderName </> "Properties") </> "AssemblyInfo.cs") attributes
-        | Vbproj -> AssemblyInfoFile.createVisualBasic ((folderName </> "My Project") </> "AssemblyInfo.vb") attributes)
+    |> Seq.iter
+        (fun (projFileName, _, folderName, attributes) ->
+            match projFileName with
+            | Fsproj -> AssemblyInfoFile.createFSharp (folderName </> "AssemblyInfo.fs") attributes
+            | Csproj ->
+                AssemblyInfoFile.createCSharp
+                    ((folderName </> "Properties")
+                     </> "AssemblyInfo.cs")
+                    attributes
+            | Vbproj ->
+                AssemblyInfoFile.createVisualBasic
+                    ((folderName </> "My Project")
+                     </> "AssemblyInfo.vb")
+                    attributes)
 
 let dotnetPack ctx =
     // Get release notes with properly-linked version number
     let releaseNotes =
-        latestEntry |> Changelog.mkReleaseNotes linkReferenceForLatestEntry
+        latestEntry
+        |> Changelog.mkReleaseNotes linkReferenceForLatestEntry
 
     let args =
         [ sprintf "/p:PackageVersion=%s" latestEntry.NuGetVersion
@@ -600,9 +706,9 @@ let dotnetPack ctx =
     DotNet.pack
         (fun c ->
             { c with
-                Configuration = configuration (ctx.Context.AllExecutingTargets)
-                OutputPath = Some distDir
-                Common = c.Common |> DotNet.Options.withAdditionalArgs args })
+                  Configuration = configuration (ctx.Context.AllExecutingTargets)
+                  OutputPath = Some distDir
+                  Common = c.Common |> DotNet.Options.withAdditionalArgs args })
         sln
 
 let sourceLinkTest _ =
@@ -612,16 +718,16 @@ let sourceLinkTest _ =
 let publishToNuget _ =
     allReleaseChecks ()
 
-    Paket.push (fun c ->
-        { c with
-            ToolType = ToolType.CreateLocalTool()
-            PublishUrl = publishUrl
-            WorkingDir = "dist"
-            ApiKey =
-                match nugetToken with
-                | Some s -> s
-                | _ -> c.ApiKey } // assume paket-config was set properly
-    )
+    Paket.push
+        (fun c ->
+            { c with
+                  ToolType = ToolType.CreateLocalTool()
+                  PublishUrl = publishUrl
+                  WorkingDir = "dist"
+                  ApiKey =
+                      match nugetToken with
+                      | Some s -> s
+                      | _ -> c.ApiKey })
     // If build fails after this point, we've pushed a release out with this version of CHANGELOG.md so we should keep it around
     Target.deactivateBuildFailure "RevertChangelog"
 
@@ -632,12 +738,14 @@ let gitRelease _ =
 
     Git.Staging.stageFile "" "CHANGELOG.md" |> ignore
 
-    !! "src/**/AssemblyInfo.fs" |> Seq.iter (Git.Staging.stageFile "" >> ignore)
+    !! "src/**/AssemblyInfo.fs"
+    |> Seq.iter (Git.Staging.stageFile "" >> ignore)
 
     Git.Commit.exec "" (sprintf "Bump version to %s\n\n%s" latestEntry.NuGetVersion releaseNotesGitCommitFormat)
     Git.Branches.push ""
 
-    let tag = tagFromVersionNumber latestEntry.NuGetVersion
+    let tag =
+        tagFromVersionNumber latestEntry.NuGetVersion
 
     Git.Branches.tag "" tag
     Git.Branches.pushTag "" "origin" tag
@@ -655,7 +763,8 @@ let githubRelease _ =
     let files = !!distGlob
     // Get release notes with properly-linked version number
     let releaseNotes =
-        latestEntry |> Changelog.mkReleaseNotes linkReferenceForLatestEntry
+        latestEntry
+        |> Changelog.mkReleaseNotes linkReferenceForLatestEntry
 
     GitHub.createClientWithToken token
     |> GitHub.draftNewRelease

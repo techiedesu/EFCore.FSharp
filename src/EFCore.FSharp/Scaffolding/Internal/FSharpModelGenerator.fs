@@ -21,7 +21,9 @@ type FSharpModelGenerator
 
     let fileExtension = ".fs"
 
-    let defaultNamespaces = [ "System"; "System.Collections.Generic" ]
+    let defaultNamespaces =
+        [ "System"
+          "System.Collections.Generic" ]
 
     let annotationNamespaces =
         [ "System.ComponentModel.DataAnnotations"
@@ -48,7 +50,8 @@ type FSharpModelGenerator
                 |> Seq.append annotationNamespaces
                 |> Seq.append (model |> getNamespacesFromModel)
             else
-                defaultNamespaces |> Seq.append (model |> getNamespacesFromModel)
+                defaultNamespaces
+                |> Seq.append (model |> getNamespacesFromModel)
 
         stringBuilder {
             $"namespace {``namespace``}"
@@ -68,7 +71,8 @@ type FSharpModelGenerator
 
         let dbContextFileName = options.ContextName
 
-        let domainFileName = dbContextFileName.Replace("Context", "Domain")
+        let domainFileName =
+            dbContextFileName.Replace("Context", "Domain")
 
         let generatedCode =
             contextGenerator.WriteCode(
@@ -96,7 +100,8 @@ type FSharpModelGenerator
 
         let contextFile = ScaffoldedFile(path, generatedCode)
 
-        let resultingFiles = ScaffoldedModel(ContextFile = contextFile)
+        let resultingFiles =
+            ScaffoldedModel(ContextFile = contextFile)
 
         let createEntityCode (entityType: IEntityType) =
             entityTypeGenerator.WriteCode(
@@ -121,7 +126,8 @@ type FSharpModelGenerator
                 entityCode
             }
 
-        let domainFile = ScaffoldedFile((domainFileName + fileExtension), domainFileCode)
+        let domainFile =
+            ScaffoldedFile((domainFileName + fileExtension), domainFileCode)
 
         resultingFiles.AdditionalFiles.Add(domainFile)
 

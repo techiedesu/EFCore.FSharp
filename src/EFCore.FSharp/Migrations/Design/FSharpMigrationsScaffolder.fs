@@ -11,7 +11,9 @@ type FSharpMigrationsScaffolder(dependencies) =
 
     // Copy of (modulo custom code changes) https://github.com/aspnet/EntityFrameworkCore/blob/d8b7ebbfabff3d2e8560c24b1ff14d1f4244ca6a/src/EFCore.Design/Migrations/Design/MigrationsScaffolder.cs#L365
     override this.Save(projectDir, migration: ScaffoldedMigration, outputDir, dryRun) =
-        let lastMigrationFileName = migration.PreviousMigrationId + migration.FileExtension
+        let lastMigrationFileName =
+            migration.PreviousMigrationId
+            + migration.FileExtension
 
         let migrationDirectory =
             if outputDir |> notNull then
@@ -23,18 +25,26 @@ type FSharpMigrationsScaffolder(dependencies) =
             Path.Combine(migrationDirectory, migration.MigrationId + migration.FileExtension)
 
         let migrationMetadataFile =
-            Path.Combine(migrationDirectory, migration.MigrationId + ".Designer" + migration.FileExtension)
+            Path.Combine(
+                migrationDirectory,
+                migration.MigrationId
+                + ".Designer"
+                + migration.FileExtension
+            )
 
-        let modelSnapshotFileName = migration.SnapshotName + migration.FileExtension
+        let modelSnapshotFileName =
+            migration.SnapshotName + migration.FileExtension
 
         let modelSnapshotDirectory =
             this.GetDirectory(projectDir, modelSnapshotFileName, migration.SnapshotSubnamespace)
 
-        let modelSnapshotFile = Path.Combine(modelSnapshotDirectory, modelSnapshotFileName)
+        let modelSnapshotFile =
+            Path.Combine(modelSnapshotDirectory, modelSnapshotFileName)
 
         dependencies.OperationReporter.WriteVerbose(DesignStrings.WritingMigration(migrationFile))
 
-        Directory.CreateDirectory(migrationDirectory) |> ignore
+        Directory.CreateDirectory(migrationDirectory)
+        |> ignore
 
         (* Custom code
            This is all we need to support an F# compatible file structure
@@ -51,7 +61,8 @@ type FSharpMigrationsScaffolder(dependencies) =
 
         dependencies.OperationReporter.WriteVerbose(DesignStrings.WritingSnapshot(modelSnapshotFile))
 
-        Directory.CreateDirectory(modelSnapshotDirectory) |> ignore
+        Directory.CreateDirectory(modelSnapshotDirectory)
+        |> ignore
 
         if not dryRun then
             File.WriteAllText(modelSnapshotFile, (migration.SnapshotCode: string), Encoding.UTF8)

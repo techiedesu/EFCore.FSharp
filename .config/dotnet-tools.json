@@ -32,8 +32,8 @@
         "fsharp-analyzers"
       ]
     },
-    "fantomas": {
-      "version": "6.3.15",
+    "fantomas-tool": {
+      "version": "4.5.6",
       "commands": [
         "fantomas"
       ]

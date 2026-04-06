@@ -71,14 +71,16 @@ module FSharpMigrationsScaffolderTest =
         let migrationAssembly =
             MigrationsAssembly(
                 currentContext,
-                DbContextOptions<'context>().WithExtension(FakeRelationalOptionsExtension()),
+                DbContextOptions<'context>()
+                    .WithExtension(FakeRelationalOptionsExtension()),
                 idGenerator,
                 FakeDiagnosticsLogger<DbLoggerCategory.Migrations>()
             )
 
         let historyRepository = MockHistoryRepository()
 
-        let services = RelationalTestHelpers.Instance.CreateContextServices()
+        let services =
+            RelationalTestHelpers.Instance.CreateContextServices()
 
         let model = Model().FinalizeModel()
 
@@ -153,9 +155,11 @@ module FSharpMigrationsScaffolderTest =
             [
 
               test "ScaffoldMigration reuses model snapshot" {
-                  let scaffolder = createMigrationScaffolder<ContextWithSnapshot> ()
+                  let scaffolder =
+                      createMigrationScaffolder<ContextWithSnapshot> ()
 
-                  let migration = scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
+                  let migration =
+                      scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
 
                   Expect.equal (nameof ContextWithSnapshotModelSnapshot) migration.SnapshotName "Should be equal"
 
@@ -174,7 +178,8 @@ module FSharpMigrationsScaffolderTest =
               // }
 
               test "ScaffoldMigration can override namespace" {
-                  let scaffolder = createMigrationScaffolder<ContextWithSnapshot> ()
+                  let scaffolder =
+                      createMigrationScaffolder<ContextWithSnapshot> ()
 
                   let migration =
                       scaffolder.ScaffoldMigration("EmptyMigration", null, "OverrideNamespace.OverrideSubNamespace")
@@ -198,15 +203,19 @@ module FSharpMigrationsScaffolderTest =
               }
 
               test "ScaffoldMigration save works as expected" {
-                  let projectDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+                  let projectDir =
+                      Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
 
                   Directory.CreateDirectory(projectDir) |> ignore
 
-                  let scaffolder = createMigrationScaffolder<ContextWithSnapshot> ()
+                  let scaffolder =
+                      createMigrationScaffolder<ContextWithSnapshot> ()
 
-                  let migration = scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
+                  let migration =
+                      scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
 
-                  let saveResult = scaffolder.Save(projectDir, migration, null, false)
+                  let saveResult =
+                      scaffolder.Save(projectDir, migration, null, false)
 
                   Expect.isTrue (File.Exists saveResult.MigrationFile) "MigrationFile should exist"
                   Expect.isTrue (File.Exists saveResult.MetadataFile) "MetadataFile should exist"
