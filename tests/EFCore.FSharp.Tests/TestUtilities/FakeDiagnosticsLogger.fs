@@ -26,11 +26,11 @@ type FakeDiagnosticsLogger<'a when 'a :> LoggerCategory<'a> and 'a: (new: unit -
 
         member this.ShouldLogSensitiveData() : bool = false
 
-        member this.DbContextLogger = Unchecked.defaultof<_>
+        member this.DbContextLogger = failwith "todo"
 
         member this.DispatchEventData(definition, eventData, diagnosticSourceEnabled, simpleLogEnabled) =
-            Unchecked.defaultof<_>
+            failwith "todo"
 
-        member this.NeedsEventData(definition, diagnosticSourceEnabled, simpleLogEnabled) = false
-        member this.NeedsEventData(definition, interceptor, diagnosticSourceEnabled, simpleLogEnabled) = false
-        member this.ShouldLog(definition) = true
+        member this.NeedsEventData(definition, diagnosticSourceEnabled, simpleLogEnabled) = failwith "todo"
+        member this.NeedsEventData(definition, interceptor, diagnosticSourceEnabled, simpleLogEnabled) = failwith "todo"
+        member this.ShouldLog(definition) = failwith "todo"

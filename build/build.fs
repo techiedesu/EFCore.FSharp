@@ -302,7 +302,6 @@ module FSharpAnalyzers =
         | Fail_On_Warnings of string list
         | Ignore_Files of string list
         | Verbose
-
         interface IArgParserTemplate with
             member s.Usage = ""
 
@@ -727,7 +726,8 @@ let publishToNuget _ =
                   ApiKey =
                       match nugetToken with
                       | Some s -> s
-                      | _ -> c.ApiKey })
+                      | _ -> c.ApiKey // assume paket-config was set properly
+            })
     // If build fails after this point, we've pushed a release out with this version of CHANGELOG.md so we should keep it around
     Target.deactivateBuildFailure "RevertChangelog"
 
