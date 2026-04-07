@@ -862,10 +862,16 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         member this.Literal(value: string) : string = this.literalString value
 
         member this.Literal(value: TimeOnly) : string =
-            if value.Ticks % 10_000L = 0L then
-                sprintf "TimeOnly(%d, %d, %d, %d)" value.Hour value.Minute value.Second value.Millisecond
+            let result =
+                if value.Millisecond = 0 then
+                    sprintf "TimeOnly(%d, %d, %d)" value.Hour value.Minute value.Second
+                else
+                    sprintf "TimeOnly(%d, %d, %d, %d)" value.Hour value.Minute value.Second value.Millisecond
+
+            if value.Ticks % 10_000L > 0L then
+                sprintf "%s.Add(TimeSpan.FromTicks(%dL))" result (value.Ticks % 10_000L)
             else
-                sprintf "TimeOnly(%dL)" value.Ticks
+                result
 
         member this.Literal(value: TimeSpan) = this.literalTimeSpan value
 

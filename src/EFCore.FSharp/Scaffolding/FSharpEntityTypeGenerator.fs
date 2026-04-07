@@ -286,8 +286,13 @@ type FSharpEntityTypeGenerator
                 AttributeWriter(nameof InversePropertyAttribute)
 
             let nameMatches =
-                navigation.DeclaringEntityType.GetMembers()
-                |> Seq.exists (fun m -> m.Name = inverseNavigation.DeclaringEntityType.Name)
+                let entityType = navigation.DeclaringEntityType
+                let targetName = inverseNavigation.DeclaringEntityType.Name
+
+                entityType.GetProperties()
+                |> Seq.exists (fun p -> p.Name = targetName)
+                || entityType.GetNavigations()
+                   |> Seq.exists (fun n -> n.Name = targetName)
 
             let param =
                 if nameMatches then
@@ -420,8 +425,13 @@ type FSharpEntityTypeGenerator
                     AttributeWriter(nameof InversePropertyAttribute)
 
                 let condition =
-                    navigation.DeclaringEntityType.GetMembers()
-                    |> Seq.exists (fun m -> m.Name = inverseNavigation.DeclaringEntityType.Name)
+                    let entityType = navigation.DeclaringEntityType
+                    let targetName = inverseNavigation.DeclaringEntityType.Name
+
+                    entityType.GetProperties()
+                    |> Seq.exists (fun p -> p.Name = targetName)
+                    || entityType.GetNavigations()
+                       |> Seq.exists (fun n -> n.Name = targetName)
 
                 if condition then
                     inversePropertyAttribute.AddParameter(code.Literal inverseNavigation.Name)

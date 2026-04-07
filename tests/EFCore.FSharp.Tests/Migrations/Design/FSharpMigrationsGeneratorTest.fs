@@ -463,8 +463,8 @@ module FSharpMigrationsGeneratorTest =
                           + @"entityTypeBuilder.HasDiscriminator().HasValue(""MyDiscriminatorValue"") |> ignore"))
                         (RelationalAnnotationNames.Comment,
                          (box "My Comment",
-                          _toTable
-                          + @"entityTypeBuilder.HasAnnotation(""Relational:Comment"", ""My Comment"") |> ignore"))
+                          _nl
+                          + @"entityTypeBuilder.ToTable(""WithAnnotations"", (fun t -> t.HasComment(""My Comment""))) |> ignore"))
                         (RelationalAnnotationNames.ViewName,
                          (box "MyView",
                           _nl
